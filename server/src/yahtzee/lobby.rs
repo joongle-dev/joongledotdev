@@ -61,9 +61,8 @@ impl LobbyCollection {
         //Loop until randomly generated lobby ID does not collide with existing lobbies (unlikely to loop more than once).
         let lobby_id = loop {
             let lobby_id = rand::thread_rng().gen::<LobbyID>();
-            let lobby_sender = lobby_sender.clone();
             if let Entry::Vacant(v) = self.lobbies.entry(lobby_id) {
-                v.insert(Lobby { channel: lobby_sender });
+                v.insert(Lobby { channel: lobby_sender.clone() });
                 break lobby_id
             }
         };
