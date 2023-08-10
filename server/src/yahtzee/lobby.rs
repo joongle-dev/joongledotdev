@@ -114,7 +114,7 @@ impl LobbyCollection {
                             }
                             //Remove this user from lobby.
                             let _ = lobby_sender.send(LobbyMessage::Disconnect { user_id });
-                        });
+                        }); //End of websocket task.
                     },
                     //On client disconnect from this lobby:
                     LobbyMessage::Disconnect { user_id } => {
@@ -134,11 +134,12 @@ impl LobbyCollection {
 
             //Remove this lobby from registry.
             let _ = lobbies.remove(&lobby_id);
-        });
+        }); //End of lobby task.
 
         lobby_id
     }
     pub fn join(&self, lobby_id: LobbyID, websocket: WebSocket) {
+        //Send websocket to lobby if found.
         if let Some(lobby) = self.lobbies.get(&lobby_id) {
             let _ = lobby.channel.send(LobbyMessage::Connect { websocket });
         }
