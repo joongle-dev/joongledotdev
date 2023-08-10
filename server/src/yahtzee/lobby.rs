@@ -103,7 +103,7 @@ impl LobbyCollection {
                             while let Some(Ok(Message::Binary(socket_message_serialized))) = socket_receiver.next().await {
                                 let socket_message = match bincode::deserialize::<SocketMessage>(&socket_message_serialized) {
                                     Ok(socket_message) => socket_message,
-                                    Err(_) => break, //Break out of socket message loop on deserialization failure.
+                                    Err(_) => break, //Break out of websocket message loop on deserialization failure.
                                 };
                                 match socket_message {
                                     SocketMessage::SdpOffer { target, .. } | SocketMessage::SdpAnswer { target, .. }=> {
