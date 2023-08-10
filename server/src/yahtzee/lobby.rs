@@ -77,8 +77,8 @@ impl LobbyCollection {
             while let Some(lobby_message) = lobby_receiver.recv().await {
                 match lobby_message {
                     //On client joining this lobby:
-                    LobbyMessage::Connect { websocket: socket } => {
-                        let (mut socket_sender, mut socket_receiver) = socket.split();
+                    LobbyMessage::Connect { websocket } => {
+                        let (mut socket_sender, mut socket_receiver) = websocket.split();
                     
                         //Generate user ID.
                         let user_id = user_id_counter;
