@@ -85,7 +85,7 @@ impl LobbyCollection {
                         user_id_counter += 1;
 
                         //Send message to client notifying connection to this lobby.
-                        let existing_users = users.iter().map(|(k, _v)| k.clone()).collect::<Vec<_>>();
+                        let existing_users = users.iter().map(|(k, _)| k.clone()).collect::<Vec<_>>();
                         let socket_message = SocketMessage::ConnectSuccess { user_id, existing_users };
                         let socket_message_serialized = match bincode::serialize(&socket_message) {
                             Ok(socket_message_serialized) => socket_message_serialized,
