@@ -98,6 +98,7 @@ impl LobbyCollection {
                         //Spawn a task that receives websocket messages from the client and relay them to the lobby task.
                         let lobby_sender = lobby_sender.clone();
                         let _ = tokio::spawn(async move {
+                            println!("->> User {user_id} joined lobby {lobby_id}");
                             //Read incoming messages from the client. Breaks if the connection closes.
                             while let Some(Ok(Message::Binary(socket_message_serialized))) = socket_receiver.next().await {
                                 let socket_message = match bincode::deserialize::<SocketMessage>(&socket_message_serialized) {
@@ -112,6 +113,7 @@ impl LobbyCollection {
                                 }
                             }
                             //Remove this user from lobby.
+                            println!("->> User {user_id} left lobby {lobby_id}");
                             let _ = lobby_sender.send(LobbyMessage::Disconnect { user_id });
                         }); //End of websocket task.
                     },
@@ -132,8 +134,11 @@ impl LobbyCollection {
             }
 
             //Remove this lobby from registry.
+            println!("->> Lobby {lobby_id} removed");
             let _ = lobbies.remove(&lobby_id);
         }); //End of lobby task.
+
+        println!("->> Lobby {lobby_id} created");
 
         lobby_id
     }
