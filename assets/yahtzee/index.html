@@ -4,19 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="prereload" href="../style.css" as="style">
-
-    <link rel="icon" href="../dice-six.ico">
-    <link rel="stylesheet" href="../style.css">
+    <link rel="preload" href="/style.css" as="style">
+    
+    <link rel="icon" href="/dice-six.ico">
+    <link rel="stylesheet" href="/style.css">
 
     <title>joongle.dev</title>
   </head>
   <body>
     <p>yahtzee</p>
-    <script>
-        const socket_address = "ws://" + window.location.host + "/ws";
-        console.log("connecting to " +  socket_address);
-        const socket = new WebSocket(socket_address);
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
