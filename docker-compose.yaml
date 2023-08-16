@@ -1,7 +1,7 @@
 version: '3'
 services: 
   api: 
-    image: joongle/joongle.dev
+    image: joongle/joongledotdev
     build:
       context: .
       dockerfile: Dockerfile
