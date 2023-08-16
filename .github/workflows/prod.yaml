@@ -41,6 +41,9 @@ jobs:
       uses: docker/bake-action@v2.3.0
       with:
         push: true
+        set: |
+          *.cache-from=type=gha
+          *.cache-to=type=gha,mode=max
 
   deploy:
     needs: build
@@ -50,6 +53,15 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
+            
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:

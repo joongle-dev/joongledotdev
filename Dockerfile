@@ -1,13 +1,19 @@
-FROM messense/rust-musl-cross:x86_64-musl AS build
+FROM messense/rust-musl-cross:x86_64-musl AS chef
+RUN cargo install cargo-chef
 WORKDIR /joongledotdev
-#Copy the source code
+
+FROM chef AS planner
 COPY . .
-#Build the application
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+COPY --from=planner /joongledotdev/recipe.json recipe.json
+RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
+COPY . .
 RUN cargo build --release --target x86_64-unknown-linux-musl
 
-#Create a new stage with a minimal image
 FROM scratch
 COPY ./assets /assets
-COPY --from=build /joongledotdev/target/x86_64-unknown-linux-musl/release/server /joongledotdev
+COPY --from=builder /joongledotdev/target/x86_64-unknown-linux-musl/release/server /joongledotdev
 ENTRYPOINT [ "/joongledotdev" ]
 EXPOSE 8000
