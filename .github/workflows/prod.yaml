@@ -1,13 +1,6 @@
 name: Build, Test and Deploy to Prod
 
-on:
-  push:
-    branches:
-      - master
-
-  workflow_dispatch:
-    
-    
+on: [push, workflow_dispatch]
 
 jobs:
   build:
@@ -61,7 +54,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-
-            
+
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
