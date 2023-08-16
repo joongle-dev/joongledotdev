@@ -65,7 +65,7 @@ jobs:
     - name: Deploy
       uses: appleboy/ssh-action@master
       with:
-        host: $${{ vars.DROPLET_IP }}
+        host: ${{ vars.DROPLET_IP }}
         username: root
         password: ${{ secrets.DROPLET_PASSWORD }}
         script: |
