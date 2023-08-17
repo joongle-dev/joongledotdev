@@ -12,7 +12,7 @@ const IP_ADDR: IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
 const HTTP_PORT: u16 = 8000;
 const HTTPS_PORT: u16 = 8001;
 const CERT_FILE: &str = "certs/cert.pem";
-const KEY_FILE: &str = "certs/privkey.pem";
+const KEY_FILE: &str = "certs/key.pem";
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), std::io::Error> {
