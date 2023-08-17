@@ -20,36 +20,36 @@ async fn main() -> std::result::Result<(), std::io::Error> {
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
         .nest("/", yahtzee::routes());
 
-    let config = loop {
-        let cert = match tokio::fs::read_link(CERT_FILE).await {
-            Ok(cert_path) => match tokio::fs::read(cert_path.clone()).await {
-                Ok(cert) => cert,
-                Err(error) => {
-                    println!("Could not read {}", cert_path.into_os_string().into_string().unwrap());
-                    break Err(error)
-                }
-            }
-            Err(error) => {
-                println!("Could not find {CERT_FILE}, {error}");
-                break Err(error)
-            }
-        };
-        let key = match tokio::fs::read_link(KEY_FILE).await {
-            Ok(key_path) => match tokio::fs::read(key_path.clone()).await {
-                Ok(cert) => cert,
-                Err(error) => {
-                    println!("Could not read {}", key_path.into_os_string().into_string().unwrap());
-                    break Err(error)
-                }
-            }
-            Err(error) => {
-                println!("Could not find {KEY_FILE}, {error}");
-                break Err(error)
-            }
-        };
-        break RustlsConfig::from_pem(cert, key).await
-    };
-    //let config = RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await;
+    // let config = loop {
+    //     let cert = match tokio::fs::read_link(CERT_FILE).await {
+    //         Ok(cert_path) => match tokio::fs::read(cert_path.clone()).await {
+    //             Ok(cert) => cert,
+    //             Err(error) => {
+    //                 println!("Could not read {}", cert_path.into_os_string().into_string().unwrap());
+    //                 break Err(error)
+    //             }
+    //         }
+    //         Err(error) => {
+    //             println!("Could not find {CERT_FILE}, {error}");
+    //             break Err(error)
+    //         }
+    //     };
+    //     let key = match tokio::fs::read_link(KEY_FILE).await {
+    //         Ok(key_path) => match tokio::fs::read(key_path.clone()).await {
+    //             Ok(cert) => cert,
+    //             Err(error) => {
+    //                 println!("Could not read {}", key_path.into_os_string().into_string().unwrap());
+    //                 break Err(error)
+    //             }
+    //         }
+    //         Err(error) => {
+    //             println!("Could not find {KEY_FILE}, {error}");
+    //             break Err(error)
+    //         }
+    //     };
+    //     break RustlsConfig::from_pem(cert, key).await
+    // };
+    let config = RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await;
     match config {
         Ok(config) => {
             println!("->> Found certificates!, Running in encrypted mode.");
@@ -58,8 +58,8 @@ async fn main() -> std::result::Result<(), std::io::Error> {
             println!("->> Listening on {addr}.");
             let _ = axum_server::bind_rustls(addr, config).serve(routes.into_make_service_with_connect_info::<SocketAddr>()).await;
         }
-        Err(_) => {
-            println!("->> Failed to find certificates, Running in unencrypted mode.");
+        Err(error) => {
+            println!("->> Failed to find certificates: {error}. Running in unencrypted mode.");
             let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
             println!("->> Listening on {addr}.");
             let _ = axum_server::bind(addr).serve(routes.into_make_service_with_connect_info::<SocketAddr>()).await;
