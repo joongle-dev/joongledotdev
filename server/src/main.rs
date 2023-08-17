@@ -1,7 +1,7 @@
 pub mod error;
 pub mod yahtzee;
 
-use axum::{Router, http::{Uri, StatusCode}, BoxError, extract::Host, response::Redirect, handler::HandlerWithoutStateExt};
+use axum::{Router, http::{Uri, StatusCode}, extract::Host, response::Redirect, handler::HandlerWithoutStateExt};
 use axum_server::tls_rustls::RustlsConfig;
 use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
 }
 
 async fn redirect_http_to_https() {
-    fn make_https(host: String, uri: Uri) -> core::result::Result<Uri, BoxError> {
+    fn make_https(host: String, uri: Uri) -> core::result::Result<Uri, axum::BoxError> {
         let mut parts = uri.into_parts();
         parts.scheme = Some(axum::http::uri::Scheme::HTTPS);
         if parts.path_and_query.is_none() {
