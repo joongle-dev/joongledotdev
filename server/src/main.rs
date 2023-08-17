@@ -11,6 +11,10 @@ pub use crate::error::{Error, Result};
 const IP_ADDR: IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
 const HTTP_PORT: u16 = 8000;
 const HTTPS_PORT: u16 = 8001;
+const CERT_FILE: &str = "certs/cert.pem";
+const KEY_FILE: &str = "certs/privkey.pem";
+
+use std::fs;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,7 +22,15 @@ async fn main() -> Result<()> {
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
         .nest("/", yahtzee::routes());
 
-    let config = RustlsConfig::from_pem_file("certs/cert.pem", "certs/privkey.pem").await;
+    match fs::metadata(CERT_FILE) {
+        Ok(_) => println!("cert.pem found!"),
+        Err(e) => println!("cert.pem not found! {e}"),
+    }
+    match fs::metadata(KEY_FILE) {
+        Ok(_) => println!("privkey.pem found!"),
+        Err(e) => println!("privkey.pem not found! {e}"),
+    }
+    let config = RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await;
     match config {
         Ok(config) => {
             println!("->> Found certificates!, Running in encrypted mode.");
