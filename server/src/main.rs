@@ -18,8 +18,7 @@ async fn main() -> Result<()> {
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
         .nest("/", yahtzee::routes());
 
-    let config = RustlsConfig::from_pem_file("certs/cert.pem", "certs/key.pem").await;
-    
+    let config = RustlsConfig::from_pem_file("certs/cert.pem", "certs/privkey.pem").await;
     match config {
         Ok(config) => {
             println!("->> Found certificates!, Running in encrypted mode.");
