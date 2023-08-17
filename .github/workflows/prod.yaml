@@ -87,4 +87,4 @@ jobs:
           cd ~
           docker-compose down
           docker-compose pull
-          docker-compose run --detach --rm --service-ports --volume=${{ vars.WEBCERT_VOLUME }}:/certs:ro
+          docker-compose run --detach --rm --service-ports --volume=${{ vars.WEBCERT_VOLUME }}:/certs:ro web

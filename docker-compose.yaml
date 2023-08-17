@@ -1,6 +1,6 @@
 version: '3'
 services: 
-  api: 
+  web: 
     image: joongle/joongledotdev
     build:
       context: .
