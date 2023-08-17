@@ -30,7 +30,7 @@ async fn main() -> std::result::Result<(), std::io::Error> {
                 }
             }
             Err(error) => {
-                println!("Could not find {CERT_FILE}");
+                println!("Could not find {CERT_FILE}, {error}");
                 break Err(error)
             }
         };
@@ -43,7 +43,7 @@ async fn main() -> std::result::Result<(), std::io::Error> {
                 }
             }
             Err(error) => {
-                println!("Could not find {KEY_FILE}");
+                println!("Could not find {KEY_FILE}, {error}");
                 break Err(error)
             }
         };
