@@ -8,7 +8,7 @@ use tower_http::services::{ServeDir, ServeFile};
 
 pub use crate::error::{Error, Result};
 
-const IP_ADDR: IpAddr = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
+const IP_ADDR: [u8; 4] = [0, 0, 0, 0];
 const HTTP_PORT: u16 = 8000;
 const HTTPS_PORT: u16 = 8001;
 const CERT_FILE: &str = "certs/cert.pem";
@@ -20,37 +20,7 @@ async fn main() -> std::result::Result<(), std::io::Error> {
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
         .nest("/", yahtzee::routes());
 
-    // let config = loop {
-    //     let cert = match tokio::fs::read_link(CERT_FILE).await {
-    //         Ok(cert_path) => match tokio::fs::read(cert_path.clone()).await {
-    //             Ok(cert) => cert,
-    //             Err(error) => {
-    //                 println!("Could not read {}", cert_path.into_os_string().into_string().unwrap());
-    //                 break Err(error)
-    //             }
-    //         }
-    //         Err(error) => {
-    //             println!("Could not find {CERT_FILE}, {error}");
-    //             break Err(error)
-    //         }
-    //     };
-    //     let key = match tokio::fs::read_link(KEY_FILE).await {
-    //         Ok(key_path) => match tokio::fs::read(key_path.clone()).await {
-    //             Ok(cert) => cert,
-    //             Err(error) => {
-    //                 println!("Could not read {}", key_path.into_os_string().into_string().unwrap());
-    //                 break Err(error)
-    //             }
-    //         }
-    //         Err(error) => {
-    //             println!("Could not find {KEY_FILE}, {error}");
-    //             break Err(error)
-    //         }
-    //     };
-    //     break RustlsConfig::from_pem(cert, key).await
-    // };
-    let config = RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await;
-    match config {
+    match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
         Ok(config) => {
             println!("->> Found certificates!, Running in encrypted mode.");
             tokio::spawn(redirect_http_to_https());
@@ -88,6 +58,6 @@ async fn redirect_http_to_https() {
         }
     };
 
-    let addr = SocketAddr::new(IP_ADDR, HTTP_PORT);
+    let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
     let _ = axum_server::bind(addr).serve(redirect.into_make_service()).await;
 }
