@@ -16,5 +16,4 @@ FROM scratch
 COPY ./assets /assets
 COPY --from=builder /joongledotdev/target/x86_64-unknown-linux-musl/release/server /joongledotdev
 ENTRYPOINT [ "/joongledotdev" ]
-EXPOSE 8000
-EXPOSE 8001
+EXPOSE 8000 8001
