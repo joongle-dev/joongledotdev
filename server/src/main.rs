@@ -15,7 +15,7 @@ const CERT_FILE: &str = "certs/cert.pem";
 const KEY_FILE: &str = "certs/key.pem";
 
 #[tokio::main]
-async fn main() -> std::result::Result<(), std::io::Error> {
+async fn main() -> Result<()> {
     let routes = Router::new()
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
         .nest("/", yahtzee::routes());
