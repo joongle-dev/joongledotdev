@@ -20,18 +20,18 @@ async fn main() -> std::result::Result<(), std::io::Error> {
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
         .nest("/", yahtzee::routes());
 
-    let config = {
+    let config = loop {
         let cert = match tokio::fs::read_link(CERT_FILE).await {
             Ok(cert_path) => match tokio::fs::read(cert_path.clone()).await {
                 Ok(cert) => cert,
                 Err(error) => {
                     println!("Could not read {}", cert_path.into_os_string().into_string().unwrap());
-                    return Err(error)
+                    break Err(error)
                 }
             }
             Err(error) => {
                 println!("Could not find {CERT_FILE}");
-                return Err(error)
+                break Err(error)
             }
         };
         let key = match tokio::fs::read_link(KEY_FILE).await {
@@ -39,15 +39,15 @@ async fn main() -> std::result::Result<(), std::io::Error> {
                 Ok(cert) => cert,
                 Err(error) => {
                     println!("Could not read {}", key_path.into_os_string().into_string().unwrap());
-                    return Err(error)
+                    break Err(error)
                 }
             }
             Err(error) => {
                 println!("Could not find {KEY_FILE}");
-                return Err(error)
+                break Err(error)
             }
         };
-        RustlsConfig::from_pem(cert, key).await
+        break RustlsConfig::from_pem(cert, key).await
     };
     //let config = RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await;
     match config {
