@@ -3,7 +3,7 @@ pub mod yahtzee;
 
 use axum::{Router, http::{Uri, StatusCode}, BoxError, extract::Host, response::Redirect, handler::HandlerWithoutStateExt};
 use axum_server::tls_rustls::RustlsConfig;
-use std::net::{SocketAddr, IpAddr, Ipv4Addr};
+use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
 
 pub use crate::error::{Error, Result};
