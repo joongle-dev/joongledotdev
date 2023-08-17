@@ -87,4 +87,4 @@ jobs:
           cd ~
           docker-compose down
           docker-compose pull
-          docker-compose up -d
+          docker-compose run -d -rm -v ${{ secrets.WEBCERT_VOLUME }}:/certs:ro
