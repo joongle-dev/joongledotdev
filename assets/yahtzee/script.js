@@ -1,4 +1,4 @@
-const socket_address = "ws://" + window.location.host + "/yahtzee/ws";
+const socket_address = "wss://" + window.location.host + "/yahtzee/ws";
 console.log("connecting to " +  socket_address);
 const socket = new WebSocket(socket_address);
 
