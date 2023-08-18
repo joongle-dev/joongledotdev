@@ -68,4 +68,4 @@ jobs:
                     cd ~
                     docker compose down
                     docker compose pull
-                    docker compose run --rm --service-ports -d -v ${{ vars.TLS_CERT_FILE }}:/certs/cert.pem -v ${{ vars.TLS_KEY_FILE }}:/certs/key.pem -e COMPOSE_PROJECT_NAME🔗=joongledotdev web
+                    docker compose run --rm --service-ports -d -v ${{ vars.TLS_CERT_FILE }}:/certs/cert.pem -v ${{ vars.TLS_KEY_FILE }}:/certs/key.pem web
