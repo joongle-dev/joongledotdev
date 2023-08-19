@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
             let _ = axum_server::bind_rustls(addr, config).serve(routes.into_make_service_with_connect_info::<SocketAddr>()).await;
         }
         Err(error) => {
-            println!("->> Failed to find certificates: {error}. Running in unencrypted mode.");
+            println!("->> Failed to validate certificates: {error}. Running in unencrypted mode.");
             let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
             println!("->> Listening on {addr}.");
             let _ = axum_server::bind(addr).serve(routes.into_make_service_with_connect_info::<SocketAddr>()).await;
