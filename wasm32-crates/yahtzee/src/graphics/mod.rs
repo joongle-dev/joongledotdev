@@ -109,6 +109,7 @@ impl Renderer {
                 depth_stencil_attachment: None,
             });
         }
+        
         Ok(())
     }
 }
