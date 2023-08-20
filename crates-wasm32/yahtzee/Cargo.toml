@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 log = "0.4.17"
@@ -14,11 +14,6 @@ wasm-bindgen = "0.2.84"
 wasm-bindgen-futures = "0.4.34"
 winit = "0.28.6"
 wgpu = "0.17.0"
-rapier3d = { version = "0.17.2", features = ["wasm-bindgen"] }
-bytemuck = { version = "1.13.1", features = ["derive", "wasm_simd"] }
-image = { version = "0.24.6" }
-nalgebra = { version = "0.32.2", default-features = false }
-js-sys = "0.3.61"
 
 [dependencies.web-sys]
 version = "0.3.61"

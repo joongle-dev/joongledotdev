@@ -19,19 +19,22 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
         Ok(window) => window,
         Err(error) => panic!("Failed to create winit window from canvas: {error}")
     };
-    let renderer = graphics::Renderer::new(window).await;
+    let mut renderer = graphics::Renderer::new(&window).await;
 
     event_loop.run(move |event, _, control_flow| { 
         match event {
             Event::WindowEvent { window_id, ref event } if window_id == window.id() => {
                 match event {
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    WindowEvent::Resized(new_size) => renderer.resize(new_size),
+                    WindowEvent::Resized(new_size) => renderer.resize(new_size.to_owned()),
                     _ => {}
                 }
             } 
             Event::RedrawRequested(window_id) if window_id == window.id() => {
-                
+                match renderer.render() {
+                    Ok(_) => {},
+                    Err(error) => panic!("Surface error: {error}"),
+                }
             }
             Event::MainEventsCleared => {
                 window.request_redraw();

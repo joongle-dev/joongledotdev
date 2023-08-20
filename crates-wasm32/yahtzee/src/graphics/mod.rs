@@ -6,11 +6,10 @@ pub struct Renderer {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
-    window: Window,
 }
 
 impl Renderer {
-    pub async fn new(window: Window) -> Self {
+    pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -69,8 +68,7 @@ impl Renderer {
             device,
             queue,
             config,
-            size,
-            window
+            size
         }
     }
 
