@@ -11,6 +11,7 @@ type UserID = u8;
 #[derive(Serialize, Deserialize, Clone)]
 enum SocketMessage {
     ConnectSuccess{
+        lobby_id: LobbyID,
         user_id: UserID,
         existing_users: Vec<UserID>,
     },
@@ -86,7 +87,7 @@ impl LobbyCollection {
 
                         //Send message to client notifying connection to this lobby.
                         let existing_users = users.keys().cloned().collect::<Vec<_>>();
-                        let socket_message = SocketMessage::ConnectSuccess { user_id, existing_users };
+                        let socket_message = SocketMessage::ConnectSuccess { lobby_id, user_id, existing_users };
                         let socket_message_serialized = match bincode::serialize(&socket_message) {
                             Ok(socket_message_serialized) => socket_message_serialized,
                             Err(_) => break, //Break out of lobby message loop on serialization failure.
