@@ -18,11 +18,13 @@ enum SocketMessage {
     SdpOffer{
         source: UserID,
         target: UserID,
+        name: Arc<str>,
         sdp: Arc<str>,
     },
     SdpAnswer{
         source: UserID,
         target: UserID,
+        name: Arc<str>,
         sdp: Arc<str>,
     }
 }
