@@ -2,7 +2,6 @@ use dashmap::{DashMap, mapref::entry::Entry};
 use serde::{Deserialize, Serialize};
 use std::{sync::Arc, collections::BTreeMap};
 use futures::{sink::SinkExt, stream::{StreamExt, SplitSink}};
-use rand::Rng;
 use tokio::sync::mpsc::UnboundedSender;
 use axum::extract::ws::{Message, WebSocket};
 
@@ -48,19 +47,21 @@ struct Lobby {
 pub struct LobbyCollection {
     lobbies: Arc<DashMap<LobbyID, Lobby>>,
 }
-impl LobbyCollection {
-    pub fn new() -> Self {
+impl Default for LobbyCollection {
+    fn default() -> Self {
         Self {
             lobbies: Arc::new(DashMap::new()),
         }
     }
+}
+impl LobbyCollection {
     pub fn create(&self) -> LobbyID {
         //Create lobby message channel.
         let (lobby_sender, mut lobby_receiver) = tokio::sync::mpsc::unbounded_channel::<LobbyMessage>();
-        
+
         //Loop until randomly generated lobby ID does not collide with existing lobbies (unlikely to loop more than once).
         let lobby_id = loop {
-            let lobby_id = rand::thread_rng().gen::<LobbyID>();
+            let lobby_id = rand::random::<LobbyID>();
             if let Entry::Vacant(v) = self.lobbies.entry(lobby_id) {
                 v.insert(Lobby { channel: lobby_sender.clone() });
                 break lobby_id
@@ -69,7 +70,7 @@ impl LobbyCollection {
 
         //Spawn a task that handles lobby logic.
         let lobbies = self.lobbies.clone();
-        let _ = tokio::spawn(async move {
+        tokio::spawn(async move {
             let mut user_id_counter = 0;
             let mut users = BTreeMap::<UserID, SplitSink<WebSocket, Message>>::new();
             //Read incoming messages for this lobby.
@@ -78,13 +79,13 @@ impl LobbyCollection {
                     //On client joining this lobby:
                     LobbyMessage::Connect { websocket } => {
                         let (mut socket_sender, mut socket_receiver) = websocket.split();
-                    
+
                         //Generate user ID.
                         let user_id = user_id_counter;
                         user_id_counter += 1;
 
                         //Send message to client notifying connection to this lobby.
-                        let existing_users = users.iter().map(|(k, _)| k.clone()).collect::<Vec<_>>();
+                        let existing_users = users.keys().cloned().collect::<Vec<_>>();
                         let socket_message = SocketMessage::ConnectSuccess { user_id, existing_users };
                         let socket_message_serialized = match bincode::serialize(&socket_message) {
                             Ok(socket_message_serialized) => socket_message_serialized,
@@ -97,7 +98,7 @@ impl LobbyCollection {
 
                         //Spawn a task that receives websocket messages from the client and relay them to the lobby task.
                         let lobby_sender = lobby_sender.clone();
-                        let _ = tokio::spawn(async move {
+                        tokio::spawn(async move {
                             println!("->> User {user_id} joined lobby {lobby_id}");
                             //Read incoming messages from the client. Breaks if the connection closes.
                             while let Some(Ok(Message::Binary(socket_message_serialized))) = socket_receiver.next().await {

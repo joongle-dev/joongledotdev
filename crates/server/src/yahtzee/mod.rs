@@ -10,7 +10,7 @@ pub mod lobby;
 use lobby::LobbyCollection;
 
 pub fn routes() -> Router {
-    let lobby_collection = LobbyCollection::new();
+    let lobby_collection = LobbyCollection::default();
     Router::new()
         .route("/yahtzee/ws", get(lobby_connection_handler))
         .with_state(lobby_collection)
