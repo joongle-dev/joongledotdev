@@ -19,6 +19,7 @@ jobs:
 
           - name: Build and test code
             run: |
+                cd crates
                 cargo build --verbose
                 cargo test --verbose
 
