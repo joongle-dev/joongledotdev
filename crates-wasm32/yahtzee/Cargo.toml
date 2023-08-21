@@ -10,17 +10,17 @@ crate-type = ["cdylib"]
 log = "0.4.17"
 console_error_panic_hook = "0.1.6"
 console_log = "1.0.0"
-wasm-bindgen = "0.2.84"
+wasm-bindgen = "0.2.87"
 wasm-bindgen-futures = "0.4.34"
 winit = "0.28.6"
 wgpu = "0.17.0"
+serde = { version = "1.0.164", features = ["derive", "rc"] }
+bincode = "1.3.3"
 
 [dependencies.web-sys]
 version = "0.3.61"
 features = [
-    "Window",
     "HtmlCanvasElement",
-    "MouseEvent",
 ]
 
 [profile.dev.package."*"]

@@ -30,16 +30,18 @@ impl Renderer {
             }
         ).await {
             Some(adapter) => adapter,
-            None => panic!("Faild graphics adapter request.")
+            None => panic!("Failed graphics adapter request.")
         };
         let adapter_info = adapter.get_info();
         log::info!("Graphics adapter name: {}", adapter_info.name);
+        log::info!("Graphics adapter driver: {}", adapter_info.driver);
+        log::info!("Graphics adapter driver info: {}", adapter_info.driver_info);
 
         let (device, queue) = match adapter.request_device(
             &wgpu::DeviceDescriptor {
                 features: wgpu::Features::empty(),
                 limits: wgpu::Limits::default(), //TODO: Consider WebGL compatibility.
-                label: Some("WGPU Device"),
+                label: Some("Graphics Device"),
             }, 
             None
         ).await {
@@ -107,6 +109,9 @@ impl Renderer {
                 depth_stencil_attachment: None,
             });
         }
+
+        self.queue.submit(std::iter::once(encoder.finish()));
+        output.present();
         
         Ok(())
     }

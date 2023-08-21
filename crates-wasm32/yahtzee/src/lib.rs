@@ -7,6 +7,7 @@ use winit::{
 };
 
 mod graphics;
+mod lobby_state;
 
 #[wasm_bindgen]
 pub async fn run(canvas: web_sys::HtmlCanvasElement) {
