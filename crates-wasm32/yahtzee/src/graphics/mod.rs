@@ -1,23 +1,23 @@
-use winit::{window::Window, platform::web::WindowExtWebSys};
+use web_sys::HtmlCanvasElement;
 
 pub struct Renderer {
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
-    size: winit::dpi::PhysicalSize<u32>,
 }
 
 impl Renderer {
-    pub async fn new(window: &Window) -> Self {
-        let size = window.inner_size();
+    pub async fn new(canvas: HtmlCanvasElement) -> Self {
+        let width = canvas.width();
+        let height = canvas.height();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             dx12_shader_compiler: Default::default(),
         });
 
-        let surface = match instance.create_surface_from_canvas(window.canvas()) {
+        let surface = match instance.create_surface_from_canvas(canvas) {
             Ok(surface) => surface,
             Err(error) => panic!("Failed to create surface from canvas: {error}")
         };
@@ -40,7 +40,7 @@ impl Renderer {
         let (device, queue) = match adapter.request_device(
             &wgpu::DeviceDescriptor {
                 features: wgpu::Features::empty(),
-                limits: wgpu::Limits::default(), //TODO: Consider WebGL compatibility.
+                limits: wgpu::Limits::downlevel_webgl2_defaults(),
                 label: Some("Graphics Device"),
             }, 
             None
@@ -57,8 +57,8 @@ impl Renderer {
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
-            width: size.width,
-            height: size.height,
+            width: width,
+            height: height,
             present_mode: surface_capabilities.present_modes[0], //TODO: Present mode setting.
             alpha_mode: surface_capabilities.alpha_modes[0], 
             view_formats: vec![]
@@ -70,15 +70,13 @@ impl Renderer {
             device,
             queue,
             config,
-            size
         }
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
+    pub fn resize(&mut self, new_width: u32, new_height: u32) {
+        if new_width > 0 && new_height > 0 {
+            self.config.width = new_width;
+            self.config.height = new_height;
             self.surface.configure(&self.device, &self.config);
         }
     }
