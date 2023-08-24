@@ -45,9 +45,7 @@ impl PeerNetwork {
         })))
     }
     pub fn broadcast_str(&self, data: &str) {
-        log::info!("Begin broadcast.");
         for peer in self.0.borrow().peers.values() {
-            log::info!("Sending to {}", peer.name);
             peer.dc.send_str(data);
         }
     }
