@@ -8,7 +8,6 @@ use graphics::Renderer;
 mod platform;
 use platform::{Platform, Event as PlatformEvent};
 
-mod lobby_state;
 mod networks;
 
 #[wasm_bindgen]
@@ -32,6 +31,8 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
         .expect("Failed to retrieve name-submit-btn")
         .dyn_into::<HtmlButtonElement>()
         .expect("name-submit-btn is not a button.");
+    let peer_network = networks::peer_network::PeerNetwork::new();
+    let peer_network_clone = peer_network.clone();
     let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
         Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             let name = name_input.value();
@@ -46,10 +47,7 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
             let search = location.search()
                 .expect("Failed to retrieve search.");
             let socket_address = format!("{protocol}://{host}{path}ws{search}");
-            let lobby_state = match lobby_state::LobbyState::new(name.as_str(), socket_address.as_str()) {
-                Ok(lobby_state) => lobby_state,
-                Err(err) => panic!("Failed to connect to server: {err:?}"),
-            };
+            peer_network_clone.connect(name, socket_address);
         }))
     };
     name_submit_btn.set_onclick(Some(onclick_callback.as_ref().unchecked_ref()));

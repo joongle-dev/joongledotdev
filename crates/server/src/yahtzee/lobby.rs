@@ -10,22 +10,17 @@ type UserID = u8;
 
 #[derive(Serialize, Deserialize, Clone)]
 enum SocketMessage {
-    ConnectSuccess{
+    ConnectSuccess {
         lobby_id: LobbyID,
-        user_id: UserID,
-        existing_users: Vec<UserID>,
+        assigned_id: UserID,
+        peers_id: Vec<UserID>,
     },
-    SdpOffer{
+    WebRtcHandshake {
         source: UserID,
         target: UserID,
-        name: Arc<str>,
-        sdp: Arc<str>,
-    },
-    SdpAnswer{
-        source: UserID,
-        target: UserID,
-        name: Arc<str>,
-        sdp: Arc<str>,
+        username: String,
+        sdp_description: String,
+        ice_candidates: Vec<(String, Option<String>, Option<u16>)>,
     }
 }
 
@@ -88,8 +83,8 @@ impl LobbyCollection {
                         user_id_counter += 1;
 
                         //Send message to client notifying connection to this lobby.
-                        let existing_users = users.keys().cloned().collect::<Vec<_>>();
-                        let socket_message = SocketMessage::ConnectSuccess { lobby_id, user_id, existing_users };
+                        let peers_id = users.keys().cloned().collect::<Vec<_>>();
+                        let socket_message = SocketMessage::ConnectSuccess { lobby_id, assigned_id: user_id, peers_id };
                         let socket_message_serialized = match bincode::serialize(&socket_message) {
                             Ok(socket_message_serialized) => socket_message_serialized,
                             Err(_) => break, //Break out of lobby message loop on serialization failure.
@@ -109,11 +104,8 @@ impl LobbyCollection {
                                     Ok(socket_message) => socket_message,
                                     Err(_) => break, //Break out of websocket message loop on deserialization failure.
                                 };
-                                match socket_message {
-                                    SocketMessage::SdpOffer { target, .. } | SocketMessage::SdpAnswer { target, .. }=> {
-                                        let _ = lobby_sender.send(LobbyMessage::Message { target, socket_message_serialized });
-                                    },
-                                    _ => {},
+                                if let SocketMessage::WebRtcHandshake { target, .. } = socket_message {
+                                    let _ = lobby_sender.send(LobbyMessage::Message { target, socket_message_serialized });
                                 }
                             }
                             //Remove this user from lobby.
