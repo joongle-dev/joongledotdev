@@ -1,4 +1,3 @@
-use std::fmt::format;
 use wasm_bindgen::prelude::*;
 use web_sys::{HtmlButtonElement, HtmlInputElement};
 
@@ -58,7 +57,7 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
         Platform::new(canvas, move |event: PlatformEvent| match event {
             PlatformEvent::AnimationFrame => {
                 if let Err(err) = renderer.render() {
-                    panic!("Surface error: {err}");
+                    panic!("Surface error: {err:?}");
                 }
             }
             PlatformEvent::MouseEvent { .. } => {}

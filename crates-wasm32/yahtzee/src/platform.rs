@@ -32,7 +32,7 @@ impl<F: FnMut(Event) + 'static> Platform<F> {
             window: web_sys::window().expect("Failed to retrieve Window."),
             animation_frame_closure: None,
             animation_id: None,
-            event_handler: event_handler,
+            event_handler,
             closures: vec![],
         }));
         {

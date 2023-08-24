@@ -43,7 +43,7 @@ impl PeerNetwork {
             callbacks: Vec::new(),
         })))
     }
-    fn create_peer_data(&self, configuration: Configuration, name: Rc<str>, peer_id: u8) -> (PeerData, UnboundedReceiver<IceCandidate>) {
+    fn create_peer_data(&self, configuration: Configuration, peer_name: Rc<str>, peer_id: u8) -> (PeerData, UnboundedReceiver<IceCandidate>) {
         let peer_network = self.clone();
         let peer_connection = PeerConnection::new_with_configuration(configuration);
         let (sender, receiver) = futures::channel::mpsc::unbounded::<IceCandidate>();
@@ -65,7 +65,7 @@ impl PeerNetwork {
             PeerData {
                 pc: peer_connection,
                 dc: data_channel,
-                name: name,
+                name: peer_name,
                 callbacks: vec![
                     Box::new(onicecandidate_callback),
                     Box::new(onopen_callback),
@@ -106,7 +106,7 @@ impl PeerNetwork {
                             let message = SocketMessage::WebRtcHandshake {
                                 source: assigned_id,
                                 target: peer_id,
-                                username: username,
+                                username,
                                 sdp_description: offer_sdp,
                                 ice_candidates: candidates.collect::<Vec<_>>().await,
                             };
@@ -137,7 +137,6 @@ impl PeerNetwork {
                         let username = username.clone();
                         let websocket = websocket.clone();
                         let peer_network = peer_network.clone();
-                        let configuration = configuration.clone();
                         wasm_bindgen_futures::spawn_local(async move {
                             let (peer_data, candidates) = peer_network.create_peer_data(configuration, peer_name, peer_id);
                             peer_data.pc.receive_offer_sdp(sdp).await;
@@ -149,7 +148,7 @@ impl PeerNetwork {
                             let message = SocketMessage::WebRtcHandshake {
                                 source: user_id,
                                 target: peer_id,
-                                username: username,
+                                username,
                                 sdp_description: answer_sdp,
                                 ice_candidates: candidates.collect::<Vec<_>>().await,
                             };
