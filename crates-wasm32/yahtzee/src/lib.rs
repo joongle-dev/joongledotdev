@@ -57,7 +57,6 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
             let socket_address = format!("{protocol}://{host}{path}ws{search}");
             peer_network_clone.connect(name.clone(), socket_address);
             name_submit_btn.set_hidden(true);
-            ping_btn.set_hidden(false);
 
             let peer_network_clone = peer_network_clone.clone();
             let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
@@ -66,13 +65,14 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
                     peer_network_clone.broadcast_str(data.as_str());
                 }))
             };
-            ping_btn.set_hidden(true);
+            ping_btn.set_hidden(false);
             ping_btn.set_onclick(Some(onclick_callback.as_ref().unchecked_ref()));
             onclick_callback.forget();
         }))
     };
     name_submit_btn.set_onclick(Some(onclick_callback.as_ref().unchecked_ref()));
     onclick_callback.forget();
+    ping_btn.set_hidden(true);
 
     let mut renderer = Renderer::new(canvas.clone()).await;
     let platform = {
