@@ -3,7 +3,7 @@ use web_sys::{BinaryType, MessageEvent, WebSocket};
 use serde::{Serialize, Deserialize};
 use futures::{channel::mpsc::UnboundedReceiver, StreamExt};
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
-use super::webrtc::{PeerConnection, DataChannel, IceCandidate};
+use crate::networks::webrtc::{Configuration, ConfigurationBuilder, PeerConnection, DataChannel, IceCandidate};
 
 #[derive(Serialize, Deserialize, Clone)]
 enum SocketMessage {
@@ -43,9 +43,9 @@ impl PeerNetwork {
             callbacks: Vec::new(),
         })))
     }
-    fn create_peer_data(&self, name: Rc<str>, peer_id: u8) -> (PeerData, UnboundedReceiver<IceCandidate>) {
+    fn create_peer_data(&self, configuration: Configuration, name: Rc<str>, peer_id: u8) -> (PeerData, UnboundedReceiver<IceCandidate>) {
         let peer_network = self.clone();
-        let peer_connection = PeerConnection::new();
+        let peer_connection = PeerConnection::new_with_configuration(configuration);
         let (sender, receiver) = futures::channel::mpsc::unbounded::<IceCandidate>();
         let onicecandidate_callback = peer_connection.set_onicecandidate(move |event| {
             match event.candidate() {
@@ -82,6 +82,10 @@ impl PeerNetwork {
         let peer_network = self.clone();
         let onmessage_callback = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
             log::info!("Received websocket message.");
+            let configuration = ConfigurationBuilder::new()
+                .add_stun_server("stun:stun.l.google.com:19302")
+                .add_stun_server("stun:stun1.l.google.com:19302")
+                .build();
             let buffer = event.data().dyn_into::<js_sys::ArrayBuffer>().unwrap();
             let u8arr = js_sys::Uint8Array::new(&buffer);
             let u8vec: Vec<u8> = u8arr.to_vec();
@@ -94,8 +98,9 @@ impl PeerNetwork {
                         let username = username.clone();
                         let websocket = websocket.clone();
                         let peer_network = peer_network.clone();
+                        let configuration = configuration.clone();
                         wasm_bindgen_futures::spawn_local(async move {
-                            let (peer_data, candidates) = peer_network.create_peer_data("".into(), peer_id);
+                            let (peer_data, candidates) = peer_network.create_peer_data(configuration, "".into(), peer_id);
                             let offer_sdp = peer_data.pc.create_offer_sdp().await;
                             peer_network.0.borrow_mut().peers.insert(peer_id, peer_data);
                             let message = SocketMessage::WebRtcHandshake {
@@ -132,8 +137,9 @@ impl PeerNetwork {
                         let username = username.clone();
                         let websocket = websocket.clone();
                         let peer_network = peer_network.clone();
+                        let configuration = configuration.clone();
                         wasm_bindgen_futures::spawn_local(async move {
-                            let (peer_data, candidates) = peer_network.create_peer_data(peer_name, peer_id);
+                            let (peer_data, candidates) = peer_network.create_peer_data(configuration, peer_name, peer_id);
                             peer_data.pc.receive_offer_sdp(sdp).await;
                             let answer_sdp = peer_data.pc.create_answer_sdp().await;
                             for ice_candidate in ice_candidates {
