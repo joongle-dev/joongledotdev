@@ -38,10 +38,10 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
         .dyn_into::<HtmlButtonElement>()
         .expect("ping-btn is not a button.");
     let peer_network = networks::peer_network::PeerNetwork::new();
-    let peer_network_clone = peer_network.clone();
     let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
         let name_submit_btn = name_submit_btn.clone();
         let ping_btn = ping_btn.clone();
+        let peer_network = peer_network.clone();
         Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             let name = name_input.value();
             let location = window.location();
@@ -55,14 +55,14 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
             let search = location.search()
                 .expect("Failed to retrieve search.");
             let socket_address = format!("{protocol}://{host}{path}ws{search}");
-            peer_network_clone.connect(name.clone(), socket_address);
+            peer_network.connect(name.clone(), socket_address);
             name_submit_btn.set_hidden(true);
 
-            let peer_network_clone = peer_network_clone.clone();
+            let peer_network = peer_network.clone();
             let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
                 Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
                     let data = format!("Ping from {name}!");
-                    peer_network_clone.broadcast_str(data.as_str());
+                    peer_network.broadcast_str(data.as_str());
                 }))
             };
             ping_btn.set_hidden(false);
