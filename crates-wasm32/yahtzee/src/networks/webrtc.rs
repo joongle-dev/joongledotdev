@@ -1,7 +1,37 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate};
+use web_sys::{RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration};
 use serde::{Deserialize, Serialize};
+
+#[derive(Clone)]
+pub struct Configuration(RtcConfiguration);
+pub struct ConfigurationBuilder {
+    ice_servers: Vec<RtcIceServer>,
+}
+impl ConfigurationBuilder {
+    pub fn new() -> Self {
+        Self {
+            ice_servers: Vec::new(),
+        }
+    }
+    pub fn add_stun_server(mut self, url: &str) -> Self {
+        let mut ice_server = RtcIceServer::new();
+        ice_server.url(url);
+        self.ice_servers.push(ice_server);
+        self
+    }
+    pub fn build(self) -> Configuration {
+        let mut configuration = RtcConfiguration::new();
+        if !self.ice_servers.is_empty() {
+            let mut ice_servers = js_sys::Array::new();
+            for ice_server in self.ice_servers {
+                ice_servers.push(&ice_server);
+            }
+            configuration.ice_servers(&ice_servers);
+        }
+        Configuration(configuration)
+    }
+}
 
 #[derive(Clone)]
 pub struct DataChannel(RtcDataChannel);
@@ -46,6 +76,9 @@ pub struct PeerConnection(RtcPeerConnection);
 impl PeerConnection {
     pub fn new() -> Self {
         Self(RtcPeerConnection::new().unwrap())
+    }
+    pub fn new_with_configuration(configuration: Configuration) -> Self {
+        Self(RtcPeerConnection::new_with_configuration(&configuration.0).unwrap())
     }
     pub fn set_onicecandidate<F>(&self, f: F) -> Closure::<dyn FnMut(RtcPeerConnectionIceEvent)> where F: FnMut(RtcPeerConnectionIceEvent) + 'static {
         let callback = Closure::new(f);

@@ -3,7 +3,7 @@ use web_sys::{BinaryType, MessageEvent, WebSocket};
 use serde::{Serialize, Deserialize};
 use futures::{channel::mpsc::UnboundedReceiver, StreamExt};
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
-use super::peer::{PeerConnection, DataChannel, IceCandidate};
+use super::webrtc::{PeerConnection, DataChannel, IceCandidate};
 
 #[derive(Serialize, Deserialize, Clone)]
 enum SocketMessage {
@@ -116,10 +116,10 @@ impl PeerNetwork {
                     username: peer_name,
                     sdp_description: sdp,
                     ice_candidates } => {
-                    if let Some(peer) = peer_network.0.borrow_mut().peers.get_mut(&peer_id) {
+                    if let Some(peer_data) = peer_network.0.borrow_mut().peers.get_mut(&peer_id) {
                         log::info!("Received SDP answer from {peer_name}");
-                        peer.name = peer_name;
-                        let peer_connection = peer.pc.clone();
+                        peer_data.name = peer_name;
+                        let peer_connection = peer_data.pc.clone();
                         wasm_bindgen_futures::spawn_local(async move {
                             peer_connection.receive_answer_sdp(sdp).await;
                             for ice_candidate in ice_candidates {
@@ -136,6 +136,9 @@ impl PeerNetwork {
                             let (peer_data, candidates) = peer_network.create_peer_data(peer_name, peer_id);
                             peer_data.pc.receive_offer_sdp(sdp).await;
                             let answer_sdp = peer_data.pc.create_answer_sdp().await;
+                            for ice_candidate in ice_candidates {
+                                peer_data.pc.add_ice_candidate(ice_candidate).await;
+                            }
                             peer_network.0.borrow_mut().peers.insert(peer_id, peer_data);
                             let message = SocketMessage::WebRtcHandshake {
                                 source: user_id,

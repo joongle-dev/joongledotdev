@@ -38,11 +38,12 @@ features = [
     "ProgressEvent",
 
     "RtcPeerConnection",
-    "RtcSignalingState",
     "RtcSdpType",
     "RtcSessionDescription",
     "RtcSessionDescriptionInit",
     "RtcPeerConnectionIceEvent",
+    "RtcIceServer",
+    "RtcConfiguration",
     "RtcIceCandidate",
     "RtcIceCandidateInit",
     "RtcDataChannel",
