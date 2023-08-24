@@ -53,6 +53,9 @@ impl From<IceCandidate> for RtcIceCandidate {
 pub struct DataChannel(RtcDataChannel);
 
 impl DataChannel {
+    pub fn send_str(&self, data: &str) {
+        self.0.send_with_str(data).unwrap();
+    }
     pub fn set_onopen<F>(&self, f: F) -> Closure<dyn FnMut()> where F: FnMut() + 'static {
         let callback = Closure::new(f);
         self.0.set_onopen(Some(callback.as_ref().unchecked_ref()));
@@ -88,9 +91,9 @@ impl PeerConnection {
     pub async fn add_ice_candidate(&self, candidate: IceCandidate) {
         JsFuture::from(self.0.add_ice_candidate_with_opt_rtc_ice_candidate(Some(&candidate.into()))).await.unwrap();
     }
-    pub fn create_data_channel(&self, label: &str, id: u16) -> DataChannel {
+    pub fn create_data_channel_negotiated(&self, label: &str, id: u16) -> DataChannel {
         let mut data_channel_dict = RtcDataChannelInit::new();
-            data_channel_dict.negotiated(false);
+            data_channel_dict.negotiated(true);
             data_channel_dict.id(id);
         DataChannel(self.0.create_data_channel_with_data_channel_dict(label, &data_channel_dict))
     }

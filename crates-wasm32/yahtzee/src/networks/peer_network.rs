@@ -30,6 +30,7 @@ struct PeerData {
 struct PeerNetworkData {
     id: u8,
     peers: BTreeMap<u8, PeerData>,
+
     callbacks: Vec<Box<dyn Drop>>,
 }
 
@@ -43,23 +44,36 @@ impl PeerNetwork {
             callbacks: Vec::new(),
         })))
     }
+    pub fn broadcast_str(&self, data: &str) {
+        log::info!("Begin broadcast.");
+        for peer in self.0.borrow().peers.values() {
+            log::info!("Sending to {}", peer.name);
+            peer.dc.send_str(data);
+        }
+    }
     fn create_peer_data(&self, configuration: Configuration, peer_name: Rc<str>, peer_id: u8) -> (PeerData, UnboundedReceiver<IceCandidate>) {
         let peer_network = self.clone();
         let peer_connection = PeerConnection::new_with_configuration(configuration);
-        let (sender, receiver) = futures::channel::mpsc::unbounded::<IceCandidate>();
-        let onicecandidate_callback = peer_connection.set_onicecandidate(move |event| {
-            match event.candidate() {
-                Some(candidate) => sender.unbounded_send(candidate.into()).unwrap(),
-                None => sender.close_channel(),
-            }
-        });
-        let data_channel = peer_connection.create_data_channel("Data Channel", 0);
+        let data_channel = peer_connection.create_data_channel_negotiated("Data Channel", 0);
         let onopen_callback = data_channel.set_onopen(move || {
             log::info!("Data Channel to {peer_id} opened!");
         });
         let onclose_callback = data_channel.set_onclose(move || {
             log::info!("Data Channel to {peer_id} closed!");
             peer_network.0.borrow_mut().peers.remove(&peer_id);
+        });
+        let onmessage_callback = data_channel.set_onmessage(move |event| {
+            match event.data().as_string() {
+                Some(data) => log::info!("{data}"),
+                None => log::info!("Message was not a string.")
+            }
+        });
+        let (sender, receiver) = futures::channel::mpsc::unbounded::<IceCandidate>();
+        let onicecandidate_callback = peer_connection.set_onicecandidate(move |event| {
+            match event.candidate() {
+                Some(candidate) => sender.unbounded_send(candidate.into()).unwrap(),
+                None => sender.close_channel(),
+            }
         });
         (
             PeerData {
@@ -69,7 +83,8 @@ impl PeerNetwork {
                 callbacks: vec![
                     Box::new(onicecandidate_callback),
                     Box::new(onopen_callback),
-                    Box::new(onclose_callback)],
+                    Box::new(onclose_callback),
+                    Box::new(onmessage_callback)],
             },
             receiver
         )

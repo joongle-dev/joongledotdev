@@ -1,3 +1,4 @@
+use std::fmt::format;
 use wasm_bindgen::prelude::*;
 use web_sys::{HtmlButtonElement, HtmlInputElement};
 
@@ -6,6 +7,7 @@ use graphics::Renderer;
 
 mod platform;
 use platform::{Platform, Event as PlatformEvent};
+use crate::platform::MouseAction;
 
 mod networks;
 
@@ -30,9 +32,16 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
         .expect("Failed to retrieve name-submit-btn")
         .dyn_into::<HtmlButtonElement>()
         .expect("name-submit-btn is not a button.");
+    let ping_btn = document
+        .get_element_by_id("ping-btn")
+        .expect("Failed to retrieve ping-btn")
+        .dyn_into::<HtmlButtonElement>()
+        .expect("ping-btn is not a button.");
     let peer_network = networks::peer_network::PeerNetwork::new();
     let peer_network_clone = peer_network.clone();
     let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
+        let name_submit_btn = name_submit_btn.clone();
+        let ping_btn = ping_btn.clone();
         Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             let name = name_input.value();
             let location = window.location();
@@ -46,7 +55,20 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
             let search = location.search()
                 .expect("Failed to retrieve search.");
             let socket_address = format!("{protocol}://{host}{path}ws{search}");
-            peer_network_clone.connect(name, socket_address);
+            peer_network_clone.connect(name.clone(), socket_address);
+            name_submit_btn.set_hidden(true);
+            ping_btn.set_hidden(false);
+
+            let peer_network_clone = peer_network_clone.clone();
+            let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
+                Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
+                    let data = format!("Ping from {name}!");
+                    peer_network_clone.broadcast_str(data.as_str());
+                }))
+            };
+            ping_btn.set_hidden(true);
+            ping_btn.set_onclick(Some(onclick_callback.as_ref().unchecked_ref()));
+            onclick_callback.forget();
         }))
     };
     name_submit_btn.set_onclick(Some(onclick_callback.as_ref().unchecked_ref()));
@@ -60,7 +82,11 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
                     panic!("Surface error: {err:?}");
                 }
             }
-            PlatformEvent::MouseEvent { .. } => {}
+            PlatformEvent::MouseEvent { x, y, action } => {
+                if let MouseAction::Down(..) = action {
+                    peer_network.broadcast_str(format!("Click ({x}, {y})!").as_str());
+                }
+            }
         })
     };
     platform.borrow_mut().run();
