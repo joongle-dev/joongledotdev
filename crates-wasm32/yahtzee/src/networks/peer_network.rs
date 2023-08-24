@@ -59,7 +59,7 @@ impl PeerNetwork {
             let message = bincode::deserialize::<SocketMessage>(&u8vec).unwrap();
             match message {
                 SocketMessage::ConnectSuccess { lobby_id, assigned_id, peers_id } => {
-                    log::info!("Invite code to lobby: http://localhost/yahtzee?lobby_id={lobby_id}");
+                    log::info!("Invite code to lobby: https://joongle.dev/yahtzee?lobby_id={lobby_id}");
                     network_data.borrow_mut().id = assigned_id;
                     for peer_id in peers_id {
                         let username = username.clone();
