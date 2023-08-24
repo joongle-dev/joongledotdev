@@ -72,7 +72,6 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     };
     name_submit_btn.set_onclick(Some(onclick_callback.as_ref().unchecked_ref()));
     onclick_callback.forget();
-    ping_btn.set_hidden(true);
 
     let mut renderer = Renderer::new(canvas.clone()).await;
     let platform = {
