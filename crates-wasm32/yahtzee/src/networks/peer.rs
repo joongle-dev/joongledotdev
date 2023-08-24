@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct DataChannel(RtcDataChannel);
@@ -11,10 +12,31 @@ impl DataChannel {
         self.0.set_onopen(Some(callback.as_ref().unchecked_ref()));
         callback
     }
+    pub fn set_onclose<F>(&self, f: F) -> Closure::<dyn FnMut()> where F: FnMut() + 'static {
+        let callback = Closure::new(f);
+        self.0.set_onclose(Some(callback.as_ref().unchecked_ref()));
+        callback
+    }
     pub fn set_onmessage<F>(&self, f: F) -> Closure::<dyn FnMut(MessageEvent)> where F: FnMut(MessageEvent) + 'static {
         let callback = Closure::new(f);
         self.0.set_onmessage(Some(callback.as_ref().unchecked_ref()));
         callback
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct IceCandidate(String, Option<String>, Option<u16>);
+impl From<RtcIceCandidate> for IceCandidate {
+    fn from(value: RtcIceCandidate) -> Self {
+        Self(value.candidate(), value.sdp_mid(), value.sdp_m_line_index())
+    }
+}
+impl From<IceCandidate> for RtcIceCandidate {
+    fn from(value: IceCandidate) -> Self {
+        let mut candidate_dict = RtcIceCandidateInit::new(value.0.as_str());
+        candidate_dict.sdp_mid(value.1.as_deref());
+        candidate_dict.sdp_m_line_index(value.2);
+        RtcIceCandidate::new(&candidate_dict).unwrap()
     }
 }
 
@@ -30,11 +52,8 @@ impl PeerConnection {
         self.0.set_onicecandidate(Some(callback.as_ref().unchecked_ref()));
         callback
     }
-    pub async fn add_ice_candidate(&self, candidate: (String, Option<String>, Option<u16>)) {
-        let mut candidate_dict = RtcIceCandidateInit::new(candidate.0.as_str());
-            candidate_dict.sdp_mid(candidate.1.as_deref());
-            candidate_dict.sdp_m_line_index(candidate.2);
-        JsFuture::from(self.0.add_ice_candidate_with_opt_rtc_ice_candidate_init(Some(&candidate_dict))).await.unwrap();
+    pub async fn add_ice_candidate(&self, candidate: IceCandidate) {
+        JsFuture::from(self.0.add_ice_candidate_with_opt_rtc_ice_candidate(Some(&candidate.into()))).await.unwrap();
     }
     pub fn create_data_channel(&self, label: &str, id: u16) -> DataChannel {
         let mut data_channel_dict = RtcDataChannelInit::new();
