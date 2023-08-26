@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::{BinaryType, MessageEvent, WebSocket};
 use serde::{Serialize, Deserialize};
 use futures::{channel::mpsc::UnboundedReceiver, StreamExt};
-use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 use crate::networks::webrtc::{Configuration, ConfigurationBuilder, PeerConnection, DataChannel, IceCandidate};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -37,22 +37,23 @@ struct PeerData {
 }
 struct PeerNetworkData {
     id: u8,
-    peers: BTreeMap<u8, PeerData>,
+    peers: [Option<PeerData>; 256],
     callbacks: Vec<Box<dyn Drop>>,
 }
 #[derive(Clone)]
 pub struct PeerNetwork(Rc<RefCell<PeerNetworkData>>);
 impl PeerNetwork {
     pub fn new() -> Self {
+        const INIT: Option<PeerData> = None;
         Self(Rc::new(RefCell::new(PeerNetworkData {
             id: 0,
-            peers: BTreeMap::new(),
+            peers: [INIT; 256],
             callbacks: Vec::new(),
         })))
     }
     pub fn broadcast_str(&self, data: &str) {
-        for (peer_id, peer) in self.0.borrow().peers.iter() {
-            log::info!("Sending \"{data}\" to {peer_id}");
+        for peer in self.0.borrow().peers.iter().filter_map(|v| v.as_ref()) {
+            log::info!("Sending \"{}\" to {}", data, peer.name);
             peer.dc.send_str(data);
         }
     }
@@ -65,7 +66,7 @@ impl PeerNetwork {
         });
         let onclose_callback = data_channel.set_onclose(move || {
             log::info!("Data Channel to {peer_id} closed!");
-            peer_network.0.borrow_mut().peers.remove(&peer_id);
+            peer_network.0.borrow_mut().peers[peer_id as usize] = None;
         });
         let onmessage_callback = data_channel.set_onmessage(move |event| {
             match event.data().as_string() {
@@ -123,7 +124,7 @@ impl PeerNetwork {
                         wasm_bindgen_futures::spawn_local(async move {
                             let (peer_data, candidates) = peer_network.create_peer_data(configuration, "".into(), peer_id);
                             let offer_sdp = peer_data.pc.create_offer_sdp().await;
-                            peer_network.0.borrow_mut().peers.insert(peer_id, peer_data);
+                            peer_network.0.borrow_mut().peers[peer_id as usize] = Some(peer_data);
                             let message = SocketMessage::WebRtcHandshake {
                                 source: assigned_id,
                                 target: peer_id,
@@ -143,7 +144,7 @@ impl PeerNetwork {
                     sdp_description: sdp,
                     ice_candidates
                 } => {
-                    if let Some(peer_data) = peer_network.0.borrow_mut().peers.get_mut(&peer_id) {
+                    if let Some(peer_data) = peer_network.0.borrow_mut().peers[peer_id as usize].as_mut() {
                         log::info!("Received SDP answer from {peer_name}");
                         peer_data.name = peer_name;
                         let peer_connection = peer_data.pc.clone();
@@ -166,7 +167,7 @@ impl PeerNetwork {
                             for ice_candidate in ice_candidates {
                                 peer_data.pc.add_ice_candidate(ice_candidate).await;
                             }
-                            peer_network.0.borrow_mut().peers.insert(peer_id, peer_data);
+                            peer_network.0.borrow_mut().peers[peer_id as usize] = Some(peer_data);
                             let message = SocketMessage::WebRtcHandshake {
                                 source: user_id,
                                 target: peer_id,
