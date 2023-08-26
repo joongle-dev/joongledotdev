@@ -2,34 +2,32 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration};
 use serde::{Deserialize, Serialize};
+use js_sys::{Array, Reflect};
 
 #[derive(Clone)]
 pub struct Configuration(RtcConfiguration);
 pub struct ConfigurationBuilder {
-    ice_servers: Vec<RtcIceServer>,
+    configuration: RtcConfiguration,
+    ice_servers: Array,
 }
 impl ConfigurationBuilder {
     pub fn new() -> Self {
+        let ice_servers = Array::new();
+        let mut configuration = RtcConfiguration::new();
+            configuration.ice_servers(&ice_servers);
         Self {
-            ice_servers: Vec::new(),
+            configuration,
+            ice_servers,
         }
     }
-    pub fn add_stun_server(mut self, urls: &str) -> Self {
+    pub fn add_stun_server(self, urls: &str) -> Self {
         let mut ice_server = RtcIceServer::new();
-        ice_server.urls(&urls.into());
-        self.ice_servers.push(ice_server);
+            ice_server.urls(&urls.into());
+        self.ice_servers.push(&ice_server);
         self
     }
     pub fn build(self) -> Configuration {
-        let mut configuration = RtcConfiguration::new();
-        if !self.ice_servers.is_empty() {
-            let ice_servers = js_sys::Array::new();
-            for ice_server in self.ice_servers {
-                ice_servers.push(&ice_server);
-            }
-            configuration.ice_servers(&ice_servers);
-        }
-        Configuration(configuration)
+        Configuration(self.configuration)
     }
 }
 
@@ -97,7 +95,7 @@ impl PeerConnection {
     }
     pub async fn create_offer_sdp(&self) -> String {
         let offer_obj = JsFuture::from(self.0.create_offer()).await.unwrap();
-        let offer_sdp = js_sys::Reflect::get(&offer_obj, &"sdp".into())
+        let offer_sdp = Reflect::get(&offer_obj, &"sdp".into())
             .unwrap().as_string().unwrap();
         let offer_description = RtcSessionDescriptionInit::from(offer_obj);
         JsFuture::from(self.0.set_local_description(&offer_description)).await.unwrap();
@@ -110,7 +108,7 @@ impl PeerConnection {
     }
     pub async fn create_answer_sdp(&self) -> String {
         let answer_obj = JsFuture::from(self.0.create_answer()).await.unwrap();
-        let answer_sdp = js_sys::Reflect::get(&answer_obj, &"sdp".into())
+        let answer_sdp = Reflect::get(&answer_obj, &"sdp".into())
             .unwrap().as_string().unwrap();
         let answer_description = RtcSessionDescriptionInit::from(answer_obj);
         JsFuture::from(self.0.set_local_description(&answer_description)).await.unwrap();
