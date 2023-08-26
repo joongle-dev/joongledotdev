@@ -32,12 +32,14 @@ features = [
     "WebSocket",
     "BinaryType",
     "Blob",
-    "ErrorEvent",
     "FileReader",
+    "Event",
+    "ErrorEvent",
     "MessageEvent",
     "ProgressEvent",
 
     "RtcPeerConnection",
+    "RtcPeerConnectionState",
     "RtcSdpType",
     "RtcSessionDescription",
     "RtcSessionDescriptionInit",
@@ -49,6 +51,7 @@ features = [
     "RtcDataChannel",
     "RtcDataChannelInit",
     "RtcDataChannelEvent",
+    "RtcDataChannelState",
 ]
 
 [profile.dev.package."*"]

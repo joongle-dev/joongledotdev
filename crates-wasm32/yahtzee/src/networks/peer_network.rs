@@ -53,20 +53,32 @@ impl PeerNetwork {
     }
     pub fn broadcast_str(&self, data: &str) {
         for peer in self.0.borrow().peers.iter().filter_map(|v| v.as_ref()) {
-            log::info!("Sending \"{}\" to {}", data, peer.name);
+            log::info!("Sending \"{}\" to {}; state: {:?}", data, peer.name, peer.dc.ready_state());
             peer.dc.send_str(data);
         }
     }
-    fn create_peer_data(&self, configuration: Configuration, peer_name: Rc<str>, peer_id: u8) -> (PeerData, UnboundedReceiver<IceCandidate>) {
+    fn create_peer_data(&self, configuration: Configuration, peer_name: Rc<str>, peer_id: u8, channel_id: u16) -> (PeerData, UnboundedReceiver<IceCandidate>) {
         let peer_network = self.clone();
         let peer_connection = PeerConnection::new_with_configuration(configuration);
-        let data_channel = peer_connection.create_data_channel_negotiated("Data Channel", 0);
+        let peer_connection_clone = peer_connection.clone();
+        let onconnectionstatechange_callback = peer_connection.set_onconnectionstatechange(move || {
+            log::info!("Connection state to {} change: {:?}", peer_id, peer_connection_clone.connection_state());
+        });
+        let data_channel = peer_connection.create_data_channel_negotiated("Data Channel", channel_id);
         let onopen_callback = data_channel.set_onopen(move || {
-            log::info!("Data Channel to {peer_id} opened!");
+            log::info!("Data Channel to {} opened!", peer_id);
         });
         let onclose_callback = data_channel.set_onclose(move || {
-            log::info!("Data Channel to {peer_id} closed!");
+            log::info!("Data Channel to {} closed!", peer_id);
             peer_network.0.borrow_mut().peers[peer_id as usize] = None;
+        });
+        let onclosing_callback = data_channel.set_onclosing(move || {
+            log::info!("Data Channel to {} closing!", peer_id);
+        });
+        let peer_network_clone = self.clone();
+        let onerror_callback = data_channel.set_onerror(move || {
+            log::info!("Data Channel to {} error!", peer_id);
+            peer_network_clone.0.borrow_mut().peers[peer_id as usize] = None;
         });
         let onmessage_callback = data_channel.set_onmessage(move |event| {
             match event.data().as_string() {
@@ -87,10 +99,13 @@ impl PeerNetwork {
                 dc: data_channel,
                 name: peer_name,
                 callbacks: vec![
+                    Box::new(onconnectionstatechange_callback),
                     Box::new(onicecandidate_callback),
                     Box::new(onopen_callback),
                     Box::new(onclose_callback),
-                    Box::new(onmessage_callback)],
+                    Box::new(onclosing_callback),
+                    Box::new(onmessage_callback),
+                    Box::new(onerror_callback)],
             },
             receiver
         )
@@ -114,7 +129,7 @@ impl PeerNetwork {
                     assigned_id,
                     peers_id
                 } => {
-                    log::info!("Invite code to lobby: https://joongle.dev/yahtzee?lobby_id={lobby_id}");
+                    log::info!("Invite code to lobby: http://localhost/yahtzee?lobby_id={lobby_id}");
                     peer_network.0.borrow_mut().id = assigned_id;
                     for peer_id in peers_id {
                         let username = username.clone();
@@ -122,7 +137,8 @@ impl PeerNetwork {
                         let peer_network = peer_network.clone();
                         let configuration = configuration.clone();
                         wasm_bindgen_futures::spawn_local(async move {
-                            let (peer_data, candidates) = peer_network.create_peer_data(configuration, "".into(), peer_id);
+                            let channel_id = (peer_id as u16) << 8 | assigned_id as u16;
+                            let (peer_data, candidates) = peer_network.create_peer_data(configuration, "".into(), peer_id, channel_id);
                             let offer_sdp = peer_data.pc.create_offer_sdp().await;
                             peer_network.0.borrow_mut().peers[peer_id as usize] = Some(peer_data);
                             let message = SocketMessage::WebRtcHandshake {
@@ -161,7 +177,8 @@ impl PeerNetwork {
                         let websocket = websocket.clone();
                         let peer_network = peer_network.clone();
                         wasm_bindgen_futures::spawn_local(async move {
-                            let (peer_data, candidates) = peer_network.create_peer_data(configuration, peer_name, peer_id);
+                            let channel_id = (peer_id as u16) << 8 | user_id as u16;
+                            let (peer_data, candidates) = peer_network.create_peer_data(configuration, peer_name, peer_id, channel_id);
                             peer_data.pc.receive_offer_sdp(sdp).await;
                             let answer_sdp = peer_data.pc.create_answer_sdp().await;
                             for ice_candidate in ice_candidates {

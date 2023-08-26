@@ -1,8 +1,17 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration};
+use web_sys::{Event, RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration, RtcPeerConnectionState, RtcDataChannelState};
 use serde::{Deserialize, Serialize};
-use js_sys::{Array, Reflect};
+use js_sys::{Object, Array, Reflect};
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(extends = Event, extends = Object, js_name = RTCErrorEvent, typescript_type = "RTCErrorEvent")]
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub type RTCErrorEvent;
+    #[wasm_bindgen(structural, method, getter, js_class = "RTCErrorEvent", js_name = error)]
+    pub fn error(this: &RTCErrorEvent) -> JsValue;
+}
 
 #[derive(Clone)]
 pub struct Configuration(RtcConfiguration);
@@ -53,6 +62,9 @@ impl DataChannel {
     pub fn send_str(&self, data: &str) {
         self.0.send_with_str(data).unwrap();
     }
+    pub fn ready_state(&self) -> RtcDataChannelState {
+        self.0.ready_state()
+    }
     pub fn set_onopen<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
         let callback = Closure::new(f);
         self.0.set_onopen(Some(callback.as_ref().unchecked_ref()));
@@ -61,6 +73,16 @@ impl DataChannel {
     pub fn set_onclose<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
         let callback = Closure::new(f);
         self.0.set_onclose(Some(callback.as_ref().unchecked_ref()));
+        callback
+    }
+    pub fn set_onclosing<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
+        let callback = Closure::new(f);
+        self.0.add_event_listener_with_callback("closing", callback.as_ref().unchecked_ref()).unwrap();
+        callback
+    }
+    pub fn set_onerror<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
+        let callback = Closure::new(f);
+        self.0.set_onerror(Some(callback.as_ref().unchecked_ref()));
         callback
     }
     pub fn set_onmessage<F: FnMut(MessageEvent) + 'static>(&self, f: F) -> Closure<dyn FnMut(MessageEvent)> {
@@ -78,6 +100,14 @@ impl PeerConnection {
     }
     pub fn new_with_configuration(configuration: Configuration) -> Self {
         Self(RtcPeerConnection::new_with_configuration(&configuration.0).unwrap())
+    }
+    pub fn connection_state(&self) -> RtcPeerConnectionState {
+        self.0.connection_state()
+    }
+    pub fn set_onconnectionstatechange<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
+        let callback = Closure::new(f);
+        self.0.set_onconnectionstatechange(Some(callback.as_ref().unchecked_ref()));
+        callback
     }
     pub fn set_onicecandidate<F: FnMut(RtcPeerConnectionIceEvent) + 'static>(&self, f: F) -> Closure<dyn FnMut(RtcPeerConnectionIceEvent)> {
         let callback = Closure::new(f);
