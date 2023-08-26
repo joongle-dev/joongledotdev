@@ -43,30 +43,29 @@ impl From<RtcIceCandidate> for IceCandidate {
 impl From<IceCandidate> for RtcIceCandidate {
     fn from(value: IceCandidate) -> Self {
         let mut candidate_dict = RtcIceCandidateInit::new(value.0.as_str());
-        candidate_dict.sdp_mid(value.1.as_deref());
-        candidate_dict.sdp_m_line_index(value.2);
+            candidate_dict.sdp_mid(value.1.as_deref());
+            candidate_dict.sdp_m_line_index(value.2);
         RtcIceCandidate::new(&candidate_dict).unwrap()
     }
 }
 
 #[derive(Clone)]
 pub struct DataChannel(RtcDataChannel);
-
 impl DataChannel {
     pub fn send_str(&self, data: &str) {
         self.0.send_with_str(data).unwrap();
     }
-    pub fn set_onopen<F>(&self, f: F) -> Closure<dyn FnMut()> where F: FnMut() + 'static {
+    pub fn set_onopen<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
         let callback = Closure::new(f);
         self.0.set_onopen(Some(callback.as_ref().unchecked_ref()));
         callback
     }
-    pub fn set_onclose<F>(&self, f: F) -> Closure<dyn FnMut()> where F: FnMut() + 'static {
+    pub fn set_onclose<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
         let callback = Closure::new(f);
         self.0.set_onclose(Some(callback.as_ref().unchecked_ref()));
         callback
     }
-    pub fn set_onmessage<F>(&self, f: F) -> Closure<dyn FnMut(MessageEvent)> where F: FnMut(MessageEvent) + 'static {
+    pub fn set_onmessage<F: FnMut(MessageEvent) + 'static>(&self, f: F) -> Closure<dyn FnMut(MessageEvent)> {
         let callback = Closure::new(f);
         self.0.set_onmessage(Some(callback.as_ref().unchecked_ref()));
         callback
@@ -75,7 +74,6 @@ impl DataChannel {
 
 #[derive(Clone)]
 pub struct PeerConnection(RtcPeerConnection);
-
 impl PeerConnection {
     pub fn new() -> Self {
         Self(RtcPeerConnection::new().unwrap())
@@ -83,7 +81,7 @@ impl PeerConnection {
     pub fn new_with_configuration(configuration: Configuration) -> Self {
         Self(RtcPeerConnection::new_with_configuration(&configuration.0).unwrap())
     }
-    pub fn set_onicecandidate<F>(&self, f: F) -> Closure<dyn FnMut(RtcPeerConnectionIceEvent)> where F: FnMut(RtcPeerConnectionIceEvent) + 'static {
+    pub fn set_onicecandidate<F: FnMut(RtcPeerConnectionIceEvent) + 'static>(&self, f: F) -> Closure<dyn FnMut(RtcPeerConnectionIceEvent)> {
         let callback = Closure::new(f);
         self.0.set_onicecandidate(Some(callback.as_ref().unchecked_ref()));
         callback

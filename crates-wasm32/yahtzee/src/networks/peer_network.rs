@@ -20,6 +20,14 @@ enum SocketMessage {
         ice_candidates: Vec<IceCandidate>,
     }
 }
+impl From<JsValue> for SocketMessage {
+    fn from(value: JsValue) -> Self {
+        let buffer = value.dyn_into::<js_sys::ArrayBuffer>().unwrap();
+        let u8arr = js_sys::Uint8Array::new(&buffer);
+        let u8vec: Vec<u8> = u8arr.to_vec();
+        bincode::deserialize::<SocketMessage>(&u8vec).unwrap()
+    }
+}
 
 struct PeerData {
     pc: PeerConnection,
@@ -30,10 +38,8 @@ struct PeerData {
 struct PeerNetworkData {
     id: u8,
     peers: BTreeMap<u8, PeerData>,
-
     callbacks: Vec<Box<dyn Drop>>,
 }
-
 #[derive(Clone)]
 pub struct PeerNetwork(Rc<RefCell<PeerNetworkData>>);
 impl PeerNetwork {
@@ -94,18 +100,19 @@ impl PeerNetwork {
             websocket.set_binary_type(BinaryType::Arraybuffer);
         let websocket_clone = websocket.clone();
         let peer_network = self.clone();
+        let configuration = ConfigurationBuilder::new()
+            .add_stun_server("stun:stun.l.google.com:19302")
+            .add_stun_server("stun:stun1.l.google.com:19302")
+            .build();
         let onmessage_callback = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
             log::info!("Received websocket message.");
-            let configuration = ConfigurationBuilder::new()
-                .add_stun_server("stun:stun.l.google.com:19302")
-                .add_stun_server("stun:stun1.l.google.com:19302")
-                .build();
-            let buffer = event.data().dyn_into::<js_sys::ArrayBuffer>().unwrap();
-            let u8arr = js_sys::Uint8Array::new(&buffer);
-            let u8vec: Vec<u8> = u8arr.to_vec();
-            let message = bincode::deserialize::<SocketMessage>(&u8vec).unwrap();
-            match message {
-                SocketMessage::ConnectSuccess { lobby_id, assigned_id, peers_id } => {
+            let configuration = configuration.clone();
+            match event.data().into() {
+                SocketMessage::ConnectSuccess {
+                    lobby_id,
+                    assigned_id,
+                    peers_id
+                } => {
                     log::info!("Invite code to lobby: https://joongle.dev/yahtzee?lobby_id={lobby_id}");
                     peer_network.0.borrow_mut().id = assigned_id;
                     for peer_id in peers_id {
@@ -134,7 +141,8 @@ impl PeerNetwork {
                     target: user_id,
                     username: peer_name,
                     sdp_description: sdp,
-                    ice_candidates } => {
+                    ice_candidates
+                } => {
                     if let Some(peer_data) = peer_network.0.borrow_mut().peers.get_mut(&peer_id) {
                         log::info!("Received SDP answer from {peer_name}");
                         peer_data.name = peer_name;

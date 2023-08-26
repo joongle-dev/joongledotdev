@@ -1,4 +1,3 @@
-use std::fmt::format;
 use wasm_bindgen::prelude::*;
 use web_sys::{HtmlButtonElement, HtmlInputElement};
 
