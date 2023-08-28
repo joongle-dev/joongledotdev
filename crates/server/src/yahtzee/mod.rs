@@ -7,6 +7,7 @@ use axum::{
     Router
 };
 use serde::Deserialize;
+use tower_http::services::ServeDir;
 
 pub mod lobby;
 use lobby::LobbyCollection;

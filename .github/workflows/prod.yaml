@@ -71,7 +71,4 @@ jobs:
                     cd ~
                     docker compose down --remove-orphans
                     docker compose pull
-                    docker compose run --rm --service-ports -d -v ${{ vars.TLS_CERT_FILE }}:/certs/cert.pem:ro -v ${{ vars.TLS_KEY_FILE }}:/certs/key.pem:ro web
-                    docker compose run --rm --service-ports -d \
-                    -v ${{ vars.TLS_CERT_FILE }}:/etc/ssl/certs/cert.pem:ro -v ${{ vars.TLS_KEY_FILE }}:/etc/ssl/private/privkey.pem:ro \
-                    --network=host --external-ip='$(detect-external-ip)' --relay-ip=$'(detect-external-ip)' coturn
+                    docker compose run --rm --service-ports -d -v ${{ vars.TLS_CERT_FILE }}:/certs/cert.pem -v ${{ vars.TLS_KEY_FILE }}:/certs/key.pem web
