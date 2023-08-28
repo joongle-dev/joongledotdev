@@ -8,7 +8,3 @@ services:
     ports: 
       - "80:8000"
       - "443:8001"
-  coturn:
-    image: coturn/coturn
-    restart: always
-    network_mode: "host"
