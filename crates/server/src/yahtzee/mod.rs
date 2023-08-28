@@ -7,7 +7,6 @@ use axum::{
     Router
 };
 use serde::Deserialize;
-use tower_http::services::ServeDir;
 
 pub mod lobby;
 use lobby::LobbyCollection;
@@ -15,7 +14,6 @@ use lobby::LobbyCollection;
 pub fn routes() -> Router {
     let lobby_collection = LobbyCollection::default();
     Router::new()
-        .route_service("/", ServeDir::new("assets/yahtzee"))
         .route("/ws", get(lobby_connection_handler))
         .with_state(lobby_collection)
 }
