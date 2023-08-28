@@ -1,10 +1,13 @@
 use std::net::SocketAddr;
 
-use axum::extract::{ConnectInfo, Query, State, WebSocketUpgrade};
-use axum::response::IntoResponse;
-use axum::routing::get;
-use axum::Router;
+use axum::{
+    extract::{ConnectInfo, Query, State, WebSocketUpgrade},
+    response::IntoResponse,
+    routing::get,
+    Router
+};
 use serde::Deserialize;
+use tower_http::services::ServeDir;
 
 pub mod lobby;
 use lobby::LobbyCollection;
@@ -12,7 +15,8 @@ use lobby::LobbyCollection;
 pub fn routes() -> Router {
     let lobby_collection = LobbyCollection::default();
     Router::new()
-        .route("/yahtzee/ws", get(lobby_connection_handler))
+        .route_service("/", ServeDir::new("assets/yahtzee"))
+        .route("/ws", get(lobby_connection_handler))
         .with_state(lobby_collection)
 }
 

@@ -1,7 +1,14 @@
 pub mod error;
 pub mod yahtzee;
 
-use axum::{Router, http::{Uri, StatusCode}, extract::Host, response::Redirect, handler::HandlerWithoutStateExt};
+use axum::{
+    Router,
+    routing::get,
+    http::{Uri, StatusCode},
+    extract::Host,
+    response::{Html, Redirect, IntoResponse},
+    handler::HandlerWithoutStateExt
+};
 use axum_server::tls_rustls::RustlsConfig;
 use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
@@ -18,7 +25,8 @@ const KEY_FILE: &str = "certs/key.pem";
 async fn main() -> Result<()> {
     let routes = Router::new()
         .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
-        .nest("/", yahtzee::routes());
+        .nest("/yahtzee", yahtzee::routes())
+        .route("/hello", get(hello));
 
     match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
         Ok(config) => {
@@ -60,4 +68,8 @@ async fn redirect_http_to_https() {
 
     let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
     let _ = axum_server::bind(addr).serve(redirect.into_make_service()).await;
+}
+
+async fn hello() -> impl IntoResponse {
+    Html("Hello")
 }
