@@ -2,6 +2,9 @@ version: '3'
 services: 
   web: 
     image: joongle/joongledotdev
+    volumes:
+      - /etc/letsencrypt/live/www.joongle.dev/cert.pem:/certs/cert.pem:ro
+      - /etc/letsencrypt/live/www.joongle.dev/privkey.pem:/certs/key.pem:ro
     build:
       context: .
       dockerfile: Dockerfile

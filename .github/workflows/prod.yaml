@@ -69,6 +69,6 @@ jobs:
                 password: ${{ secrets.DROPLET_PASSWORD }}
                 script: |
                     cd ~
-                    docker compose down --remove-orphans
+                    docker compose down
                     docker compose pull
-                    docker compose run --rm --service-ports -d -v ${{ vars.TLS_CERT_FILE }}:/certs/cert.pem -v ${{ vars.TLS_KEY_FILE }}:/certs/key.pem web
+                    docker compose up -d
