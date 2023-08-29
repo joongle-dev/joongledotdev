@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Event, RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration, RtcPeerConnectionState, RtcDataChannelState};
+use web_sys::{Event, RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration, RtcPeerConnectionState, RtcDataChannelState, RtcDataChannelEvent};
 use serde::{Deserialize, Serialize};
 use js_sys::{Object, Array, Reflect};
 
@@ -32,6 +32,14 @@ impl ConfigurationBuilder {
     pub fn add_stun_server(self, urls: &str) -> Self {
         let mut ice_server = RtcIceServer::new();
             ice_server.urls(&urls.into());
+        self.ice_servers.push(&ice_server);
+        self
+    }
+    pub fn add_turn_server(self, urls: &str, username: &str, credential: &str) -> Self {
+        let mut ice_server = RtcIceServer::new();
+            ice_server.urls(&urls.into());
+            ice_server.username(username);
+            ice_server.credential(credential);
         self.ice_servers.push(&ice_server);
         self
     }
@@ -103,6 +111,11 @@ impl PeerConnection {
     }
     pub fn connection_state(&self) -> RtcPeerConnectionState {
         self.0.connection_state()
+    }
+    pub fn set_ondatachannel<F: FnMut(RtcDataChannelEvent) + 'static>(&self, f: F) -> Closure<dyn FnMut(RtcDataChannelEvent)> {
+        let callback = Closure::new(f);
+        self.0.set_ondatachannel(Some(callback.as_ref().unchecked_ref()));
+        callback
     }
     pub fn set_onconnectionstatechange<F: FnMut() + 'static>(&self, f: F) -> Closure<dyn FnMut()> {
         let callback = Closure::new(f);

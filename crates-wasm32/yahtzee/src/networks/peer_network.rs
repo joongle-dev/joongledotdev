@@ -64,7 +64,7 @@ impl PeerNetwork {
         let onconnectionstatechange_callback = peer_connection.set_onconnectionstatechange(move || {
             log::info!("Connection state to {} change: {:?}", peer_id, peer_connection_clone.connection_state());
         });
-        let data_channel = peer_connection.create_data_channel_negotiated("Data Channel", channel_id);
+        let data_channel = peer_connection.create_data_channel_negotiated("Data Channel", 0);
         let onopen_callback = data_channel.set_onopen(move || {
             log::info!("Data Channel to {} opened!", peer_id);
         });
