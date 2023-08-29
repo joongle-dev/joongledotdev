@@ -63,6 +63,9 @@ function configure_data_channel(dc) {
     dc.onclose = (event) => {
         console.log('Data channel closed!');
     }
+    dc.onerror = (event) => {
+        console.log('Data channel error!');
+    }
     dc.onmessage = (event) => {
         console.log('Data channel message: ' + event.data);
     }
