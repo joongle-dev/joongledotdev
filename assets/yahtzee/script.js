@@ -12,15 +12,17 @@ import init, { deserialize_message, serialize_message } from './yahtzee.js';
 
 await init();
 
-const peer_map = new Map();
-let lobby_id = 0;
-let user_id = 0;
-let username = '';
-let websocket = null;
-
 const name_input = document.getElementById('name-input');
 const join_lobby_btn = document.getElementById('name-submit-btn');
 const ping_btn = document.getElementById('ping-btn');
+
+const peer_map = new Map();
+const websocket_protocol = location.protocol !== 'https:' ? 'ws:' : 'wss:';
+const websocket_address = websocket_protocol + '//' + location.host + location.pathname + 'ws' + location.search;
+let websocket = null;
+let lobby_id = 0;
+let user_id = 0;
+let username = '';
 
 const configuration = {
     iceServers: [
@@ -51,17 +53,20 @@ function create_pc(peer_id) {
             websocket.send(serialized.buffer);
         }
     };
-    pc.ondatachannel = (event) => {
-        const peer_ref = peer_map.get(peer_id);
-        peer_ref.dc = event.channel;
-        peer_ref.dc.onmessage = (event) => {
-            console.log('Message from ' + peer_ref.name + ': ' + event.data);
-        };
-        console.log('Received data channel from ' + peer_ref.name);
-    }
     return pc;
 }
 
+function configure_data_channel(dc) {
+    dc.onopen = (event) => {
+        console.log('Data channel opened!');
+    };
+    dc.onclose = (event) => {
+        console.log('Data channel closed!');
+    }
+    dc.onmessage = (event) => {
+        console.log('Data channel message: ' + event.data);
+    }
+}
 async function create_offer(peer_id) {
     console.log('Creating offer to Peer ID: ' + peer_id);
     const pc = create_pc(peer_id);
@@ -106,8 +111,6 @@ join_lobby_btn.onclick = (_event) => {
     join_lobby_btn.hidden = true;
     ping_btn.hidden = false;
 
-    const websocket_protocol = location.protocol !== 'https:' ? 'ws:' : 'wss:';
-    const websocket_address = websocket_protocol + '//' + location.host + location.pathname + 'ws' + location.search;
     websocket = new WebSocket(websocket_address);
     websocket.binaryType = 'arraybuffer';
     websocket.onmessage = (event) => {
@@ -115,7 +118,7 @@ join_lobby_btn.onclick = (_event) => {
         if (message.is_connect_success_message()) {
             lobby_id = message.lobby_id;
             user_id = message.assigned_id;
-            console.log('Invite code to lobby: https://joongle.dev/yahtzee?lobby_id=' + lobby_id);
+            console.log('Invite code to lobby: ' + websocket_protocol + '//' + location.host + location.pathname + '?lobby_id=' + lobby_id);
             console.log('Assigned ID: ' + user_id);
             message.peers_id.forEach((peer_id) => create_offer(peer_id));
         }
