@@ -71,6 +71,7 @@ async function create_offer(peer_id) {
     console.log('Creating offer to Peer ID: ' + peer_id);
     const pc = create_pc(peer_id);
     const dc = pc.createDataChannel('Data channel');
+    configure_data_channel(dc);
     console.log('RTCPeerConnection created');
     pc.createOffer().then((offer) => {
         pc.setLocalDescription(offer).then(() => {
@@ -82,13 +83,18 @@ async function create_offer(peer_id) {
 async function create_answer(peer_id, name, sdp, candidates) {
     console.log('Received sdp offer from ' + name);
     const pc = create_pc(peer_id);
+    pc.ondatachannel = (event) => {
+        const peer_ref = peer_map.get(peer_id);
+        peer_ref.dc = event.channel;
+        configure_data_channel(peer_ref.dc);
+    };
     pc.setRemoteDescription({ sdp: sdp, type: 'offer' }).then(() => {
         pc.createAnswer().then((answer) => {
             pc.setLocalDescription(answer).then(() => {
+                peer_map.set(peer_id, { id: peer_id, name: name, pc: pc, sdp: answer.sdp, candidates: [] });
                 candidates.forEach((candidate) => {
                     pc.addIceCandidate(candidate);
                 });
-                peer_map.set(peer_id, { id: peer_id, name: name, pc: pc, sdp: answer.sdp, candidates: [] });
             })
         })
     });
@@ -119,7 +125,7 @@ join_lobby_btn.onclick = (_event) => {
             lobby_id = message.lobby_id;
             user_id = message.assigned_id;
             console.log('Invite code to lobby: ' + location.protocol + '//' + location.host + location.pathname + '?lobby_id=' + lobby_id);
-            console.log('Assigned ID: ' + user_id);
+            console.log('Assigned ID: ' + user_id + ', Username: ' + username);
             message.peers_id.forEach((peer_id) => create_offer(peer_id));
         }
         else {
