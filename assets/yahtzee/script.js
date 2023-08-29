@@ -116,7 +116,7 @@ async function receive_answer(peer_id, name, sdp, candidates) {
 }
 
 join_lobby_btn.onclick = (_event) => {
-    username = name_input.textContent;
+    username = name_input.value;
     join_lobby_btn.hidden = true;
     ping_btn.hidden = false;
 
