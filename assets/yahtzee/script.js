@@ -109,7 +109,7 @@ join_lobby_btn.onclick = _event => {
     join_lobby_btn.hidden = true;
     ping_btn.hidden = false;
 
-    const websocket_protocol = location.protocol !== 'https:' ? 'ws:' : 'wss';
+    const websocket_protocol = location.protocol !== 'https:' ? 'ws:' : 'wss:';
     const websocket_address = websocket_protocol + '//' + location.host + location.pathname + 'ws' + location.search;
     websocket = new WebSocket(websocket_address);
     websocket.binaryType = 'arraybuffer';
