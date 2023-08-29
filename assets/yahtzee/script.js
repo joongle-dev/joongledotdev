@@ -40,8 +40,9 @@ const configuration = {
 };
 
 function disconnect(peer_id) {
-    console.log('Connection to ' + peer_map.get(peer_id).name + ' disconnected.');
-    peer_map.delete(peer_id);
+    if (peer_map.delete(peer_id)) {
+        console.log('Connection disconnected.');
+    }
 }
 function create_pc(peer_id) {
     const pc = new RTCPeerConnection(configuration);
