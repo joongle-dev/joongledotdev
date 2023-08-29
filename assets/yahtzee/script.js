@@ -118,7 +118,7 @@ join_lobby_btn.onclick = (_event) => {
         if (message.is_connect_success_message()) {
             lobby_id = message.lobby_id;
             user_id = message.assigned_id;
-            console.log('Invite code to lobby: ' + websocket_protocol + '//' + location.host + location.pathname + '?lobby_id=' + lobby_id);
+            console.log('Invite code to lobby: ' + location.protocol + '//' + location.host + location.pathname + '?lobby_id=' + lobby_id);
             console.log('Assigned ID: ' + user_id);
             message.peers_id.forEach((peer_id) => create_offer(peer_id));
         }
