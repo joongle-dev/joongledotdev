@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Event, RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration, RtcPeerConnectionState, RtcDataChannelState, RtcDataChannelEvent};
+use web_sys::{Event, RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, RtcDataChannel, RtcDataChannelInit, RtcPeerConnectionIceEvent, RtcIceCandidateInit, MessageEvent, RtcIceCandidate, RtcIceServer, RtcConfiguration, RtcPeerConnectionState, RtcDataChannelState, RtcDataChannelEvent, RtcDataChannelType};
 use serde::{Deserialize, Serialize};
 use js_sys::{Object, Array, Reflect};
 
@@ -70,6 +70,9 @@ impl DataChannel {
     pub fn send_str(&self, data: &str) {
         self.0.send_with_str(data).unwrap();
     }
+    pub fn close(&self) {
+        self.0.close();
+    }
     pub fn ready_state(&self) -> RtcDataChannelState {
         self.0.ready_state()
     }
@@ -134,7 +137,9 @@ impl PeerConnection {
         let mut data_channel_dict = RtcDataChannelInit::new();
             data_channel_dict.negotiated(true);
             data_channel_dict.id(id);
-        DataChannel(self.0.create_data_channel_with_data_channel_dict(label, &data_channel_dict))
+        let mut data_channel = self.0.create_data_channel_with_data_channel_dict(label, &data_channel_dict);
+            data_channel.set_binary_type(RtcDataChannelType::Arraybuffer);
+        DataChannel(data_channel)
     }
     pub async fn create_offer_sdp(&self) -> String {
         let offer_obj = JsFuture::from(self.0.create_offer()).await.unwrap();

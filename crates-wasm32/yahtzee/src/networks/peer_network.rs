@@ -40,6 +40,13 @@ struct PeerNetworkData {
     peers: [Option<PeerData>; 256],
     callbacks: Vec<Box<dyn Drop>>,
 }
+impl Drop for PeerNetworkData {
+    fn drop(&mut self) {
+        for peer in self.peers.iter().filter_map(|v| v.as_ref()) {
+            peer.dc.close();
+        }
+    }
+}
 #[derive(Clone)]
 pub struct PeerNetwork(Rc<RefCell<PeerNetworkData>>);
 impl PeerNetwork {
@@ -55,6 +62,11 @@ impl PeerNetwork {
         for peer in self.0.borrow().peers.iter().filter_map(|v| v.as_ref()) {
             log::info!("Sending \"{}\" to {}; state: {:?}", data, peer.name, peer.dc.ready_state());
             peer.dc.send_str(data);
+        }
+    }
+    pub fn disconnect(&self) {
+        for peer in self.0.borrow().peers.iter().filter_map(|v| v.as_ref()) {
+            peer.dc.close();
         }
     }
     fn create_peer_data(&self, configuration: Configuration, peer_name: Rc<str>, peer_id: u8, channel_id: u16) -> (PeerData, UnboundedReceiver<IceCandidate>) {
@@ -131,7 +143,7 @@ impl PeerNetwork {
                     assigned_id,
                     peers_id
                 } => {
-                    log::info!("Invite code to lobby: https://joongle.dev/yahtzee?lobby_id={lobby_id}");
+                    log::info!("Invite code to lobby: http://localhost/yahtzee?lobby_id={lobby_id}");
                     peer_network.0.borrow_mut().id = assigned_id;
                     for peer_id in peers_id {
                         let username = username.clone();

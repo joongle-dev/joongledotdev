@@ -52,6 +52,7 @@ features = [
     "RtcDataChannelInit",
     "RtcDataChannelEvent",
     "RtcDataChannelState",
+    "RtcDataChannelType",
 ]
 
 [profile.dev.package."*"]
