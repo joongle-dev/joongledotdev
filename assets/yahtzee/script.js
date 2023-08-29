@@ -68,11 +68,8 @@ async function create_offer(peer_id) {
     const dc = pc.createDataChannel('Data channel');
     console.log('RTCPeerConnection created');
     pc.createOffer().then((offer) => {
-        console.log('test1');
         pc.setLocalDescription(offer).then(() => {
-            console.log('test2');
             peer_map.set(peer_id, { id: peer_id, pc: pc, dc: dc, sdp: offer.sdp, candidates: [] });
-            console.log('test3');
         })
     });
 }
@@ -83,10 +80,10 @@ async function create_answer(peer_id, name, sdp, candidates) {
     pc.setRemoteDescription({ sdp: sdp, type: 'offer' }).then(() => {
         pc.createAnswer().then((answer) => {
             pc.setLocalDescription(answer).then(() => {
-                peer_map.set(peer_id, { id: peer_id, name: name, pc: pc, sdp: answer.sdp, candidates: [] });
                 candidates.forEach((candidate) => {
                     pc.addIceCandidate(candidate);
-                })
+                });
+                peer_map.set(peer_id, { id: peer_id, name: name, pc: pc, sdp: answer.sdp, candidates: [] });
             })
         })
     });
@@ -94,7 +91,7 @@ async function create_answer(peer_id, name, sdp, candidates) {
 
 async function receive_answer(peer_id, name, sdp, candidates) {
     console.log('Received sdp answer from ' + name);
-    const peer_ref = peer_map.get(peer_id).pc;
+    const peer_ref = peer_map.get(peer_id);
     const pc = peer_ref.pc;
     peer_ref.name = name;
     pc.setRemoteDescription({ sdp: sdp, type: 'answer' }).then(() => {
