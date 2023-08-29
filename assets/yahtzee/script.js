@@ -80,10 +80,10 @@ async function create_offer(peer_id) {
 async function create_answer(peer_id, name, sdp, candidates) {
     console.log('Received sdp offer from ' + name);
     const pc = create_pc(peer_id);
-    pc.pc.setRemoteDescription({ sdp: sdp, type: 'offer' }).then(() => {
-        pc.pc.createAnswer().then((answer) => {
-            pc.pc.setLocalDescription(answer).then(() => {
-                peer_map.set(peer_id, { id: peer_id, name: name, pc: pc, dc: dc, sdp: answer.sdp, candidates: [] });
+    pc.setRemoteDescription({ sdp: sdp, type: 'offer' }).then(() => {
+        pc.createAnswer().then((answer) => {
+            pc.setLocalDescription(answer).then(() => {
+                peer_map.set(peer_id, { id: peer_id, name: name, pc: pc, sdp: answer.sdp, candidates: [] });
                 candidates.forEach((candidate) => {
                     pc.addIceCandidate(candidate);
                 })
