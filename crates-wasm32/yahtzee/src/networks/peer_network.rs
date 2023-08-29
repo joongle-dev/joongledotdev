@@ -117,9 +117,10 @@ impl PeerNetwork {
         let websocket_clone = websocket.clone();
         let peer_network = self.clone();
         let configuration = ConfigurationBuilder::new()
-            .add_stun_server("stun:stun.l.google.com:19302")
-            .add_stun_server("stun:stun1.l.google.com:19302")
+            //.add_stun_server("stun:stun.l.google.com:19302")
+            //.add_stun_server("stun:stun1.l.google.com:19302")
             .add_turn_server("turn:turn.joongle.dev:3478", "guest", "guest1234")
+            .add_turn_server("turn:turn.joongle.dev:5349", "guest", "guest1234")
             .build();
         let onmessage_callback = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
             log::info!("Received websocket message.");
