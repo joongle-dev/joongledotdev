@@ -39,8 +39,21 @@ const configuration = {
     ],
 };
 
+function disconnect(peer_id) {
+    console.log('Connection to ' + peer_map.get(peer_id).name + ' disconnected.');
+    peer_map.set(peer_id, null);
+}
 function create_pc(peer_id) {
     const pc = new RTCPeerConnection(configuration);
+    pc.onconnectionstatechange = (event) => {
+        switch (pc.connectionState) {
+            case 'closed':
+            case 'disconnected':
+            case 'failed':
+                disconnect(peer_id);
+                break;
+        }
+    };
     pc.onicecandidate = (event) => {
         console.log('Ice candidate event');
         const peer_ref = peer_map.get(peer_id);
@@ -57,18 +70,12 @@ function create_pc(peer_id) {
 }
 
 function configure_data_channel(dc) {
-    dc.onopen = (event) => {
+    dc.onopen = (_event) => {
         console.log('Data channel opened!');
     };
-    dc.onclose = (event) => {
-        console.log('Data channel closed!');
-    }
-    dc.onerror = (event) => {
-        console.log('Data channel error!');
-    }
     dc.onmessage = (event) => {
         console.log('Data channel message: ' + event.data);
-    }
+    };
 }
 async function create_offer(peer_id) {
     console.log('Creating offer to Peer ID: ' + peer_id);
