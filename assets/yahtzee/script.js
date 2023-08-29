@@ -51,13 +51,6 @@ function create_pc(peer_id) {
             websocket.send(serialized.buffer);
         }
     };
-    return pc;
-}
-
-async function create_offer(peer_id) {
-    console.log('Creating offer to Peer ID: ' + peer_id);
-    const pc = create_pc(peer_id);
-    console.log('RTCPeerConnection created');
     pc.ondatachannel = (event) => {
         const peer_ref = peer_map.get(peer_id);
         peer_ref.dc = event.channel;
@@ -66,6 +59,33 @@ async function create_offer(peer_id) {
         };
         console.log('Received data channel from ' + peer_ref.name);
     }
+    return pc;
+}
+
+async function create_offer(peer_id) {
+    console.log('Creating offer to Peer ID: ' + peer_id);
+    const pc = new RTCPeerConnection(configuration);
+    pc.onicecandidate = (event) => {
+        console.log('Ice candidate event');
+        const peer_ref = peer_map.get(peer_id);
+        if (event.candidate !== null) {
+            peer_ref.candidates.push(event.candidate);
+        }
+        else {
+            console.log('Ice candidates gathered, sending sdp handshake...');
+            const serialized = serialize_message(user_id, peer_ref.id, username, peer_ref.sdp, peer_ref.candidates);
+            websocket.send(serialized.buffer);
+        }
+    };
+    pc.ondatachannel = (event) => {
+        const peer_ref = peer_map.get(peer_id);
+        peer_ref.dc = event.channel;
+        peer_ref.dc.onmessage = (event) => {
+            console.log('Message from ' + peer_ref.name + ': ' + event.data);
+        };
+        console.log('Received data channel from ' + peer_ref.name);
+    }
+    console.log('RTCPeerConnection created');
     pc.createOffer().then((offer) => {
         console.log('test1');
         pc.setLocalDescription(offer).then(() => {
