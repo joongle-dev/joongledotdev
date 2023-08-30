@@ -13,7 +13,7 @@ use axum_server::tls_rustls::RustlsConfig;
 use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
 
-pub use crate::error::{Error, Result};
+pub use crate::error::Result;
 
 const IP_ADDR: [u8; 4] = [0, 0, 0, 0];
 const HTTP_PORT: u16 = 8000;

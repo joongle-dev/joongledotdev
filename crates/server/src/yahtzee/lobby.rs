@@ -18,7 +18,6 @@ enum SocketMessage {
     WebRtcHandshake {
         source: UserID,
         target: UserID,
-        username: String,
         sdp_description: String,
         ice_candidates: Vec<(String, Option<String>, Option<u16>)>,
     }

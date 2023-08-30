@@ -5,108 +5,9 @@ mod graphics;
 use graphics::Renderer;
 
 mod platform;
-use platform::{Platform, Event as PlatformEvent};
-use crate::platform::MouseAction;
+use platform::{Platform, Event as PlatformEvent, MouseAction};
 
 mod networks;
-
-use serde::{Serialize, Deserialize};
-use web_sys::{RtcIceCandidate, RtcIceCandidateInit};
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct IceCandidate(String, Option<String>, Option<u16>);
-impl From<RtcIceCandidate> for IceCandidate {
-    fn from(value: RtcIceCandidate) -> Self {
-        Self(value.candidate(), value.sdp_mid(), value.sdp_m_line_index())
-    }
-}
-impl From<IceCandidate> for RtcIceCandidate {
-    fn from(value: IceCandidate) -> Self {
-        let mut candidate_dict = RtcIceCandidateInit::new(value.0.as_str());
-        candidate_dict.sdp_mid(value.1.as_deref());
-        candidate_dict.sdp_m_line_index(value.2);
-        RtcIceCandidate::new(&candidate_dict).unwrap()
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-enum SocketMessage {
-    ConnectSuccess {
-        lobby_id: u64,
-        assigned_id: u8,
-        peers_id: Vec<u8>,
-    },
-    WebRtcHandshake {
-        source: u8,
-        target: u8,
-        username: String,
-        sdp_description: String,
-        ice_candidates: Vec<IceCandidate>,
-    }
-}
-
-#[wasm_bindgen(getter_with_clone)]
-#[derive(Default)]
-pub struct DeserializedMessage {
-    pub lobby_id: Option<u64>,
-    pub assigned_id: Option<u8>,
-    pub peers_id: Vec<u8>,
-    pub source: Option<u8>,
-    pub target: Option<u8>,
-    pub username: Option<String>,
-    pub sdp_description: Option<String>,
-    pub ice_candidates: Vec<RtcIceCandidate>,
-}
-#[wasm_bindgen]
-impl DeserializedMessage {
-    #[wasm_bindgen]
-    pub fn is_connect_success_message(&self) -> bool {
-        self.lobby_id.is_some()
-    }
-}
-#[wasm_bindgen]
-pub fn deserialize_message(serialized: &[u8]) -> DeserializedMessage {
-    let deserialized = bincode::deserialize::<SocketMessage>(serialized).unwrap();
-    let mut message = DeserializedMessage::default();
-    match deserialized {
-        SocketMessage::ConnectSuccess { lobby_id, assigned_id, peers_id } => {
-            message.lobby_id = Some(lobby_id);
-            message.assigned_id = Some(assigned_id);
-            message.peers_id = peers_id;
-            // let peers_id = peers_id.into_iter().map(JsValue::from).collect::<js_sys::Array>();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("lobby_id"), &JsValue::from(lobby_id)).unwrap();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("assigned_id"), &JsValue::from(assigned_id)).unwrap();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("peers_id"), &JsValue::from(peers_id)).unwrap();
-
-        }
-        SocketMessage::WebRtcHandshake { source, target, username, sdp_description, ice_candidates } => {
-            message.source = Some(source);
-            message.target = Some(target);
-            message.username = Some(username);
-            message.sdp_description = Some(sdp_description);
-            message.ice_candidates = ice_candidates.into_iter().map(RtcIceCandidate::from).collect::<Vec<_>>();
-            // let ice_candidates = ice_candidates.into_iter().map(RtcIceCandidate::from).collect::<js_sys::Array>();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("source"), &JsValue::from(source)).unwrap();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("target"), &JsValue::from(target)).unwrap();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("username"), &JsValue::from(username)).unwrap();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("sdp_description"), &JsValue::from(sdp_description)).unwrap();
-            // js_sys::Reflect::set(&message, &JsValue::from_str("ice_candidates"), &JsValue::from(ice_candidates)).unwrap();
-        }
-    }
-    message
-}
-#[wasm_bindgen]
-pub fn serialize_message(source: u8, target: u8, username: String, sdp_description: String, ice_candidates: Vec<RtcIceCandidate>) -> Vec<u8> {
-    let message = SocketMessage::WebRtcHandshake {
-        source,
-        target,
-        username,
-        sdp_description,
-        ice_candidates: ice_candidates.into_iter().map(IceCandidate::from).collect::<Vec<_>>()
-    };
-    bincode::serialize(&message).unwrap()
-}
-
 #[wasm_bindgen]
 pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
@@ -151,7 +52,7 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
             let search = location.search()
                 .expect("Failed to retrieve search.");
             let socket_address = format!("{protocol}://{host}{path}ws{search}");
-            peer_network.connect(name.clone(), socket_address);
+            peer_network.connect(socket_address);
             name_submit_btn.set_hidden(true);
 
             let onclick_callback: Closure<dyn FnMut(web_sys::MouseEvent)> = {
