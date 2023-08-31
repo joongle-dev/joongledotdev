@@ -31,7 +31,7 @@ impl From<JsValue> for SocketMessage {
 struct PeerData {
     pc: PeerConnection,
     dc: DataChannel,
-    callbacks: Vec<Box<dyn Drop>>,
+    _callbacks: Vec<Box<dyn Drop>>,
 }
 struct PeerNetworkData {
     id: u8,
@@ -92,7 +92,7 @@ impl PeerNetwork {
             PeerData {
                 pc: peer_connection,
                 dc: data_channel,
-                callbacks: vec![
+                _callbacks: vec![
                     Box::new(onconnectionstatechange_callback),
                     Box::new(onicecandidate_callback),
                     Box::new(onopen_callback),
@@ -119,7 +119,7 @@ impl PeerNetwork {
                     assigned_id,
                     peers_id
                 } => {
-                    log::info!("Invite code to lobby: http://localhost/yahtzee?lobby_id={lobby_id}");
+                    log::info!("Invite code to lobby: https://joongle.dev/yahtzee?lobby_id={lobby_id}");
                     peer_network.0.borrow_mut().id = assigned_id;
                     for peer_id in peers_id {
                         let websocket = websocket.clone();
