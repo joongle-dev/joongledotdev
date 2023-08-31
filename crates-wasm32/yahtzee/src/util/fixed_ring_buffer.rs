@@ -24,6 +24,9 @@ impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
     pub fn len(&self) -> usize {
         self.len
     }
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
     pub fn push_front(&mut self, val: T) -> Result<(), OutOfSpaceError> {
         if self.len == C {
             return Err(OutOfSpaceError)
