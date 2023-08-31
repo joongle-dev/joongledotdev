@@ -1,11 +1,11 @@
 use wasm_bindgen::prelude::*;
-use web_sys::{HtmlButtonElement, HtmlInputElement, MessageEvent};
+use web_sys::{HtmlButtonElement, HtmlInputElement};
 
 mod graphics;
 use graphics::Renderer;
 
 mod platform;
-use platform::{Platform, Event as PlatformEvent, MouseAction};
+use platform::{Event, MouseAction};
 
 mod networks;
 mod util;
@@ -73,19 +73,19 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     onclick_callback.forget();
 
     let mut renderer = Renderer::new(canvas.clone()).await;
-    let platform = {
-        Platform::new(canvas, move |event: PlatformEvent| match event {
-            PlatformEvent::AnimationFrame => {
+    platform::run_event_loop(canvas, move |event| {
+        match event {
+            Event::AnimationFrame(_time) => {
                 if let Err(err) = renderer.render() {
                     panic!("Surface error: {err:?}");
                 }
             }
-            PlatformEvent::MouseEvent { x, y, action } => {
+            Event::MouseEvent((x, y), action) => {
                 if let MouseAction::Down(..) = action {
                     peer_network.broadcast_str(format!("Click ({x}, {y})!").as_str());
                 }
             }
-        })
-    };
-    platform.borrow_mut().run();
+        }
+        true
+    });
 }
