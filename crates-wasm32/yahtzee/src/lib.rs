@@ -8,6 +8,8 @@ mod platform;
 use platform::{Platform, Event as PlatformEvent, MouseAction};
 
 mod networks;
+mod util;
+
 #[wasm_bindgen]
 pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
