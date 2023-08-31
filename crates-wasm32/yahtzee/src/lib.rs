@@ -5,10 +5,12 @@ mod graphics;
 use graphics::Renderer;
 
 mod platform;
-use platform::Event;
+use platform::{EventLoop, Event, PlatformEvent};
 
 mod networks;
-mod util;
+pub mod util;
+
+enum CustomEvent {}
 
 #[wasm_bindgen]
 pub async fn run(canvas: web_sys::HtmlCanvasElement) {
@@ -73,18 +75,25 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     onclick_callback.forget();
 
     let mut renderer = Renderer::new(canvas.clone()).await;
-    platform::run_event_loop(canvas, move |event| {
+
+    let event_loop = EventLoop::new(canvas, move |event: Event<CustomEvent>| {
         match event {
-            Event::AnimationFrame { .. } => {
-                if let Err(err) = renderer.render() {
-                    panic!("Surface error: {err:?}");
+            Event::PlatformEvent(event) => {
+                match event {
+                    PlatformEvent::AnimationFrame { .. } => {
+                        if let Err(err) = renderer.render() {
+                            panic!("Surface error: {err:?}");
+                        }
+                    },
+                    PlatformEvent::MouseDown { offset, .. } => {
+                        peer_network.broadcast_str(format!("Click ({}, {})!", offset.0, offset.1).as_str());
+                    },
+                    _ => {}
                 }
-            },
-            Event::MouseDown { offset, .. } => {
-                peer_network.broadcast_str(format!("Click ({}, {})!", offset.0, offset.1).as_str());
-            },
-            _ => {}
+            }
+            Event::UserEvent(_) => {}
         }
         true
     });
+    event_loop.run();
 }

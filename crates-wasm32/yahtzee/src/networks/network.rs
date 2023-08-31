@@ -2,16 +2,25 @@ use wasm_bindgen::prelude::*;
 use web_sys::{MessageEvent, RtcPeerConnectionIceEvent};
 use std::{rc::Rc, cell::RefCell, collections::BTreeMap};
 use crate::networks::webrtc::{Configuration, ConfigurationBuilder, DataChannel, PeerConnection};
+use crate::util::fixed_ring_buffer::FixedRingBuffer;
 pub use crate::networks::webrtc::IceCandidate;
 
-pub struct PeerHandshakeData {
+pub enum PeerMessage {
+    Text(String),
+    Binary(Vec<u8>),
+}
+pub struct HandshakeData {
     source_id: u32,
     target_id: u32,
     sdp_description: String,
     ice_candidates: Vec<IceCandidate>,
 }
+pub enum PeerNetworkEvent {
+    Handshake(HandshakeData),
+    Message(PeerMessage),
+}
 enum PeerStatus {
-    Connecting(PeerHandshakeData),
+    Connecting(HandshakeData),
     Connected,
 }
 struct PeerData {
@@ -27,6 +36,7 @@ struct PeerNetworkData {
     id: u32,
     peers: BTreeMap<u32, PeerData>,
     configuration: Configuration,
+    event_buffer: FixedRingBuffer<PeerNetworkEvent, 128>,
 }
 pub struct PeerNetwork {
     network_data: Rc<RefCell<PeerNetworkData>>,
@@ -42,14 +52,17 @@ impl PeerNetwork {
                 id: 0,
                 peers: BTreeMap::new(),
                 configuration,
+                event_buffer: FixedRingBuffer::new(),
             }))
         }
+    }
+    pub fn next(&self) -> Option<PeerNetworkEvent> {
+        self.network_data.borrow_mut().event_buffer.pop_back().ok()
     }
     pub fn set_id(&self, id: u32) {
         self.network_data.borrow_mut().id = id;
     }
-    pub async fn create_handshake_data<F: FnMut(PeerHandshakeData)>(&self, peer_id: u32, ) -> PeerHandshakeData {
+    pub fn initiate_handshake(&self, peer_id: u32) {
 
-        todo!()
     }
 }
