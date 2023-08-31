@@ -5,7 +5,7 @@ on:
         branches:
           - main
         paths-ignore:
-          - wasm32-crates
+          - 'wasm32-crates/**'
 
 jobs:
     build:
