@@ -5,7 +5,7 @@ mod graphics;
 use graphics::Renderer;
 
 mod platform;
-use platform::{Event, MouseAction};
+use platform::Event;
 
 mod networks;
 mod util;
@@ -75,16 +75,15 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     let mut renderer = Renderer::new(canvas.clone()).await;
     platform::run_event_loop(canvas, move |event| {
         match event {
-            Event::AnimationFrame(_time) => {
+            Event::AnimationFrame { .. } => {
                 if let Err(err) = renderer.render() {
                     panic!("Surface error: {err:?}");
                 }
-            }
-            Event::MouseEvent((x, y), action) => {
-                if let MouseAction::Down(..) = action {
-                    peer_network.broadcast_str(format!("Click ({x}, {y})!").as_str());
-                }
-            }
+            },
+            Event::MouseDown { offset, .. } => {
+                peer_network.broadcast_str(format!("Click ({}, {})!", offset.0, offset.1).as_str());
+            },
+            _ => {}
         }
         true
     });

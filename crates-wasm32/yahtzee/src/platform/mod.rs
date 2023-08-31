@@ -5,12 +5,11 @@ use std::{rc::Rc, cell::RefCell};
 pub enum MouseButton {
     Unknown, Left, Middle, Right,
 }
-pub enum MouseAction {
-    Move, Down(MouseButton), Up(MouseButton),
-}
 pub enum Event {
-    AnimationFrame(f64),
-    MouseEvent((f32, f32), MouseAction),
+    AnimationFrame { timestamp: f64 },
+    MouseMove { timestamp: f64, offset: (f32, f32) },
+    MouseDown { timestamp: f64, offset: (f32, f32), button: MouseButton },
+    MouseUp { timestamp: f64, offset: (f32, f32), button: MouseButton },
 }
 struct Platform<F: FnMut(Event)-> bool + 'static> {
     event_handler: F,
@@ -36,9 +35,9 @@ pub fn run_event_loop<F: FnMut(Event) -> bool + 'static>(canvas: HtmlCanvasEleme
     let window_clone = web_sys::window().unwrap_throw();
     let platform_clone = platform.clone();
     let animation_frame_closure = Closure::new(move |time: JsValue| {
-        let time = time.as_f64().unwrap_throw();
+        let timestamp = time.as_f64().unwrap_throw();
         let mut platform_clone_ref = platform_clone.borrow_mut();
-        if !(platform_clone_ref.event_handler)(Event::AnimationFrame(time)) {
+        if !(platform_clone_ref.event_handler)(Event::AnimationFrame{ timestamp }) {
             window_clone.cancel_animation_frame(platform_clone_ref.animation_frame_id).unwrap_throw();
         } else if let Some(animation_frame_closure) = platform_clone_ref.animation_frame_closure.as_ref() {
             platform_clone_ref.animation_frame_id = window_clone.request_animation_frame(animation_frame_closure.as_ref().unchecked_ref()).unwrap_throw();
@@ -51,9 +50,9 @@ pub fn run_event_loop<F: FnMut(Event) -> bool + 'static>(canvas: HtmlCanvasEleme
     let window_clone = web_sys::window().unwrap_throw();
     let platform_clone = platform.clone();
     let mouse_move_closure = Closure::new(move |event: MouseEvent| {
-        let x = event.offset_x() as f32;
-        let y = event.offset_y() as f32;
-        let event = Event::MouseEvent((x, y), MouseAction::Move);
+        let timestamp = event.time_stamp();
+        let offset = (event.offset_x() as f32, event.offset_y() as f32);
+        let event = Event::MouseMove{ timestamp, offset };
         let mut platform_clone_ref = platform_clone.borrow_mut();
         if !(platform_clone_ref.event_handler)(event) {
             window_clone.cancel_animation_frame(platform_clone_ref.animation_frame_id).unwrap_throw();
@@ -66,10 +65,10 @@ pub fn run_event_loop<F: FnMut(Event) -> bool + 'static>(canvas: HtmlCanvasEleme
     let window_clone = web_sys::window().unwrap_throw();
     let platform_clone = platform.clone();
     let mouse_down_closure = Closure::new(move |event: MouseEvent| {
-        let x = event.offset_x() as f32;
-        let y = event.offset_y() as f32;
+        let timestamp = event.time_stamp();
+        let offset = (event.offset_x() as f32, event.offset_y() as f32);
         let button = match event.button() { 1 => MouseButton::Left, 2 => MouseButton::Right, 4 => MouseButton::Middle, _ => MouseButton::Unknown };
-        let event = Event::MouseEvent((x, y), MouseAction::Down(button));
+        let event = Event::MouseDown{ timestamp, offset, button };
         let mut platform_clone_ref = platform_clone.borrow_mut();
         if !(platform_clone_ref.event_handler)(event) {
             window_clone.cancel_animation_frame(platform_clone_ref.animation_frame_id).unwrap_throw();
@@ -82,10 +81,10 @@ pub fn run_event_loop<F: FnMut(Event) -> bool + 'static>(canvas: HtmlCanvasEleme
     let window_clone = web_sys::window().unwrap_throw();
     let platform_clone = platform.clone();
     let mouse_up_closure = Closure::new(move |event: MouseEvent| {
-        let x = event.offset_x() as f32;
-        let y = event.offset_y() as f32;
+        let timestamp = event.time_stamp();
+        let offset = (event.offset_x() as f32, event.offset_y() as f32);
         let button = match event.button() { 1 => MouseButton::Left, 2 => MouseButton::Right, 4 => MouseButton::Middle, _ => MouseButton::Unknown };
-        let event = Event::MouseEvent((x, y), MouseAction::Up(button));
+        let event = Event::MouseUp{ timestamp, offset, button };
         let mut platform_clone_ref = platform_clone.borrow_mut();
         if !(platform_clone_ref.event_handler)(event) {
             window_clone.cancel_animation_frame(platform_clone_ref.animation_frame_id).unwrap_throw();
