@@ -1,3 +1,3 @@
 pub mod webrtc;
-pub mod peer_network;
-mod network;
+pub mod peernetwork;
+pub mod websocket;

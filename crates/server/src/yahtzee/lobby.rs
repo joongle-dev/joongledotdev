@@ -6,18 +6,18 @@ use tokio::sync::mpsc::UnboundedSender;
 use axum::extract::ws::{Message, WebSocket};
 
 pub type LobbyID = u64;
-type UserID = u8;
+type UserID = u32;
 
 #[derive(Serialize, Deserialize, Clone)]
 enum SocketMessage {
     ConnectSuccess {
         lobby_id: LobbyID,
-        assigned_id: UserID,
+        user_id: UserID,
         peers_id: Vec<UserID>,
     },
     WebRtcHandshake {
-        source: UserID,
-        target: UserID,
+        source_id: UserID,
+        target_id: UserID,
         sdp_description: String,
         ice_candidates: Vec<(String, Option<String>, Option<u16>)>,
     }
@@ -83,7 +83,7 @@ impl LobbyCollection {
 
                         //Send message to client notifying connection to this lobby.
                         let peers_id = users.keys().cloned().collect::<Vec<_>>();
-                        let socket_message = SocketMessage::ConnectSuccess { lobby_id, assigned_id: user_id, peers_id };
+                        let socket_message = SocketMessage::ConnectSuccess { lobby_id, user_id: user_id, peers_id };
                         let socket_message_serialized = match bincode::serialize(&socket_message) {
                             Ok(socket_message_serialized) => socket_message_serialized,
                             Err(_) => break, //Break out of lobby message loop on serialization failure.
@@ -103,7 +103,7 @@ impl LobbyCollection {
                                     Ok(socket_message) => socket_message,
                                     Err(_) => break, //Break out of websocket message loop on deserialization failure.
                                 };
-                                if let SocketMessage::WebRtcHandshake { target, .. } = socket_message {
+                                if let SocketMessage::WebRtcHandshake { target_id: target, .. } = socket_message {
                                     let _ = lobby_sender.send(LobbyMessage::Message { target, socket_message_serialized });
                                 }
                             }

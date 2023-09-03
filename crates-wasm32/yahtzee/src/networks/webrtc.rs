@@ -4,6 +4,8 @@ use web_sys::{Event, RtcPeerConnection, RtcSessionDescriptionInit, RtcSdpType, R
 use serde::{Deserialize, Serialize};
 use js_sys::{Object, Array, Reflect};
 
+pub use web_sys::RtcPeerConnectionState as PeerConnectionState;
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(extends = Event, extends = Object, js_name = RTCErrorEvent, typescript_type = "RTCErrorEvent")]
@@ -63,6 +65,16 @@ impl From<IceCandidate> for RtcIceCandidate {
         RtcIceCandidate::new(&candidate_dict).unwrap()
     }
 }
+impl From<(String, Option<String>, Option<u16>)> for IceCandidate {
+    fn from(value: (String, Option<String>, Option<u16>)) -> Self {
+        Self(value.0, value.1, value.2)
+    }
+}
+impl From<IceCandidate> for (String, Option<String>, Option<u16>) {
+    fn from(value: IceCandidate) -> Self {
+        (value.0, value.1, value.2)
+    }
+}
 
 #[derive(Clone)]
 pub struct DataChannel(RtcDataChannel);
@@ -109,8 +121,11 @@ impl PeerConnection {
     pub fn new() -> Self {
         Self(RtcPeerConnection::new().unwrap())
     }
-    pub fn new_with_configuration(configuration: Configuration) -> Self {
+    pub fn new_with_configuration(configuration: &Configuration) -> Self {
         Self(RtcPeerConnection::new_with_configuration(&configuration.0).unwrap())
+    }
+    pub fn close(&self) {
+        self.0.close();
     }
     pub fn connection_state(&self) -> RtcPeerConnectionState {
         self.0.connection_state()
@@ -149,9 +164,9 @@ impl PeerConnection {
         JsFuture::from(self.0.set_local_description(&offer_description)).await.unwrap();
         offer_sdp
     }
-    pub async fn receive_offer_sdp(&self, offer_sdp: String) {
+    pub async fn receive_offer_sdp(&self, offer_sdp: &str) {
         let mut offer_description = RtcSessionDescriptionInit::new(RtcSdpType::Offer);
-            offer_description.sdp(&offer_sdp);
+            offer_description.sdp(offer_sdp);
         JsFuture::from(self.0.set_remote_description(&offer_description)).await.unwrap();
     }
     pub async fn create_answer_sdp(&self) -> String {
@@ -162,9 +177,9 @@ impl PeerConnection {
         JsFuture::from(self.0.set_local_description(&answer_description)).await.unwrap();
         answer_sdp
     }
-    pub async fn receive_answer_sdp(&self, answer_sdp: String) {
+    pub async fn receive_answer_sdp(&self, answer_sdp: &str) {
         let mut answer_description = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
-            answer_description.sdp(&answer_sdp);
+            answer_description.sdp(answer_sdp);
         JsFuture::from(self.0.set_remote_description(&answer_description)).await.unwrap();
     }
 }
