@@ -6,6 +6,8 @@ use crate::networks::webrtc::{ConfigurationBuilder, Configuration, PeerConnectio
 pub use crate::networks::webrtc::IceCandidate;
 
 pub enum PeerMessage {
+    Connect(u32),
+    Disconnect(u32),
     String(String),
     Binary(Vec<u8>),
 }
@@ -124,8 +126,10 @@ impl PeerNetwork {
         let peer_network_clone = self.network_data.clone();
         let _onconnectionstatechange_callback = peer_connection.set_onconnectionstatechange(move || {
             if let PeerConnectionState::Closed | PeerConnectionState::Failed | PeerConnectionState::Disconnected = peer_connection_clone.connection_state() {
-                if let Some(peer_data) = peer_network_clone.borrow_mut().peers.remove(&peer_id) {
+                let mut peer_network_ref = peer_network_clone.borrow_mut();
+                if let Some(peer_data) = peer_network_ref.peers.remove(&peer_id) {
                     log::info!("Connection to {peer_id} closed.");
+                    peer_network_ref.message_callback.as_mut()(PeerMessage::Disconnect(peer_id));
                     peer_data.data_channel.close();
                     peer_data.peer_connection.close();
                 }
@@ -158,10 +162,12 @@ impl PeerNetwork {
         //Initialize data channel open event handler.
         let peer_network_clone = self.network_data.clone();
         let _onopen_callback = data_channel.set_onopen(move || {
-            if let Some(peer_data) = peer_network_clone.borrow_mut().peers.get_mut(&peer_id) {
+            let mut peer_network_ref = peer_network_clone.borrow_mut();
+            if let Some(peer_data) = peer_network_ref.peers.get_mut(&peer_id) {
                 log::info!("Data Channel to {} opened!", peer_id);
                 peer_data.status = PeerStatus::Connected;
             }
+            peer_network_ref.message_callback.as_mut()(PeerMessage::Disconnect(peer_id));
         });
 
         //Initialize data channel message event handler.

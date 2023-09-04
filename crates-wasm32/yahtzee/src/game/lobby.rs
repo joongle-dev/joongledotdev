@@ -100,6 +100,8 @@ impl Lobby {
         match message {
             PeerMessage::String(data) => self.ui.div().text(data.as_str()),
             PeerMessage::Binary(_) => {}
+            PeerMessage::Connect(_) => {}
+            PeerMessage::Disconnect(_) => {}
         }
     }
     pub fn mousedown(&mut self, offset: (f32, f32)) {
