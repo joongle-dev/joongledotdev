@@ -39,6 +39,8 @@ body {
 
     display: flex;
     flex-direction: column;
+
+    pointer-events: none;
 }
 
 .row {
@@ -63,6 +65,7 @@ body {
 
     font-size: 32px;
     text-align: center;
+    pointer-events:auto;
 }
 
 .button {
@@ -77,6 +80,7 @@ body {
     text-align: center;
 
     cursor: pointer;
+    pointer-events:auto;
 }
 .button:hover {
     background-color: #FFFFFF33;
