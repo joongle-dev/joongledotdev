@@ -2,23 +2,6 @@ body {
     background: #222222;
 }
 
-#canvas {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
-    width: 100vw;
-    height: 75vw; /* height:width ratio = 3/4 = .75  */
-    max-height: 100vh;
-    max-width: 133.33vh; /* 4/3 = 1.333 */
-    margin: auto;
-    object-fit: contain;
-
-    z-index: -1;
-}
-
 .ui {
     position: fixed;
     top: 0;
@@ -33,9 +16,8 @@ body {
     margin: auto;
     object-fit: contain;
 
-    text-align: center;
     font-family: Helvetica, sans-serif;
-    font-size: 32px;
+    font-size: 3.5vmin;
 
     display: flex;
     flex-direction: column;
@@ -45,14 +27,26 @@ body {
 
 .row {
     flex-direction: row;
+    margin: 1vmin;
+}
+
+.centered {
+    text-align: center;
 }
 
 .heading {
-    font-size: 64px;
+    font-size: 7vmin;
 }
 
-.text {
-    font-size: 32px;
+.anchor {
+    background-color: #FFFFFF22;
+    color: black;
+
+    pointer-events: auto;
+}
+
+.anchor:hover {
+    background-color: #FFFFFF33;
 }
 
 .input {
@@ -63,8 +57,9 @@ body {
     margin: 0;
     box-sizing: border-box;
 
-    font-size: 32px;
     text-align: center;
+    font-size: inherit;
+
     pointer-events:auto;
 }
 
@@ -76,13 +71,17 @@ body {
     margin: 0;
     box-sizing: border-box;
 
-    font-size: 32px;
     text-align: center;
+    font-size: inherit;
 
     cursor: pointer;
     pointer-events:auto;
 }
+
 .button:hover {
     background-color: #FFFFFF33;
 }
 
+#canvas {
+    pointer-events: auto;
+}

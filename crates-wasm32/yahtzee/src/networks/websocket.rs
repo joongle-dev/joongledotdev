@@ -8,7 +8,7 @@ pub enum WebSocketMessage {
 }
 pub struct WebSocket {
     websocket: web_sys::WebSocket,
-    onmessage_callback: Closure<dyn FnMut(MessageEvent)>,
+    _onmessage_callback: Closure<dyn FnMut(MessageEvent)>,
 }
 impl WebSocket {
     pub fn new<F: FnMut(WebSocketMessage) + 'static>(url: &str, mut message_callback: F) -> Self {
@@ -28,7 +28,7 @@ impl WebSocket {
             websocket.set_binary_type(BinaryType::Arraybuffer);
         Self {
             websocket,
-            onmessage_callback,
+            _onmessage_callback: onmessage_callback,
         }
     }
     pub fn send_with_str(&self, data: &str) {
