@@ -67,6 +67,7 @@ impl PeerNetwork {
         let mut peer_data = self.create_peer_data(peer_id);
         let peer_network_clone = self.network_data.clone();
         wasm_bindgen_futures::spawn_local(async move {
+            log::info!("Initiating handshake to {}", peer_id);
             if let PeerStatus::Connecting(ref mut handshake_data) = peer_data.status {
                 handshake_data.sdp_description = peer_data.peer_connection.create_offer_sdp().await;
             }
