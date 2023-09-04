@@ -4,22 +4,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="preload" href="../style.css" as="style">
+    <link rel="preload" href="style.css" as="style">
     <link rel="modulepreload" href="script.js">
     <link rel="modulepreload" href="yahtzee.js">
 
     <link rel="icon" href="../dice-six.ico">
-    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="style.css">
 
     <title>joongle.dev</title>
   </head>
   <body>
-    <p>yahtzee</p>
-    <label for="name-input">Display name you will join the lobby as.</label>
-    <input type="text" id="name-input" placeholder="Your Name Here"/>
-    <button id="name-submit-btn">Join Lobby</button>
-    <button id="ping-btn" hidden>Ping Lobby</button>
-    <canvas id="canvas" class="canvas" width="800" height="600"></canvas>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div class="ui">
+      <br>
+      <br>
+      <div class="heading">Yahtzee!</div>
+      <br>
+      <div class="text">Enter your display name</div>
+      <br>
+      <div class="row">
+        <input type="text" id="name-input" class="input"/><button id="name-submit-btn" class="button">Join Lobby</button><button id="ping-btn" class="button" hidden>Ping Lobby</button>
+      </div>
+    </div>
     <script type=module src="script.js"></script>
   </body>
 </html>

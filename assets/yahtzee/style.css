@@ -1,0 +1,84 @@
+body {
+    background: #222222;
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    width: 100vw;
+    height: 75vw; /* height:width ratio = 3/4 = .75  */
+    max-height: 100vh;
+    max-width: 133.33vh; /* 4/3 = 1.333 */
+    margin: auto;
+    object-fit: contain;
+
+    z-index: -1;
+}
+
+.ui {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    width: 100vw;
+    height: 75vw; /* height:width ratio = 3/4 = .75  */
+    max-height: 100vh;
+    max-width: 133.33vh; /* 4/3 = 1.333 */
+    margin: auto;
+    object-fit: contain;
+
+    text-align: center;
+    font-family: Helvetica, sans-serif;
+    font-size: 32px;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.row {
+    flex-direction: row;
+}
+
+.heading {
+    font-size: 64px;
+}
+
+.text {
+    font-size: 32px;
+}
+
+.input {
+    background-color: #FFFFFF11;
+    border: none;
+    outline: none;
+    padding: 8px 16px;
+    margin: 0;
+    box-sizing: border-box;
+
+    font-size: 32px;
+    text-align: center;
+}
+
+.button {
+    background-color: #FFFFFF22;
+    border: none;
+    outline: none;
+    padding: 8px 16px;
+    margin: 0;
+    box-sizing: border-box;
+
+    font-size: 32px;
+    text-align: center;
+
+    cursor: pointer;
+}
+.button:hover {
+    background-color: #FFFFFF33;
+}
+
