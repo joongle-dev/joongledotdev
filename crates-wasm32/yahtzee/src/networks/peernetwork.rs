@@ -24,10 +24,10 @@ struct PeerData {
     status: PeerStatus,
     peer_connection: PeerConnection,
     data_channel: DataChannel,
-    _onconnectionstatechange_callback: Closure<dyn FnMut()>,
-    _onicecandidate_callback: Closure<dyn FnMut(RtcPeerConnectionIceEvent)>,
-    _onopen_callback: Closure<dyn FnMut()>,
-    _onmessage_callback: Closure<dyn FnMut(MessageEvent)>,
+    onconnectionstatechange_callback: Closure<dyn FnMut()>,
+    onicecandidate_callback: Closure<dyn FnMut(RtcPeerConnectionIceEvent)>,
+    onopen_callback: Closure<dyn FnMut()>,
+    onmessage_callback: Closure<dyn FnMut(MessageEvent)>,
 }
 struct PeerNetworkData {
     peers: BTreeMap<u32, PeerData>,
@@ -122,7 +122,7 @@ impl PeerNetwork {
         //Initialize peer connection connectionstatechange event handler.
         let peer_connection_clone = peer_connection.clone();
         let peer_network_clone = self.network_data.clone();
-        let _onconnectionstatechange_callback = peer_connection.set_onconnectionstatechange(move || {
+        let onconnectionstatechange_callback = peer_connection.set_onconnectionstatechange(move || {
             if let PeerConnectionState::Closed | PeerConnectionState::Failed | PeerConnectionState::Disconnected = peer_connection_clone.connection_state() {
                 if let Some(peer_data) = peer_network_clone.borrow_mut().peers.remove(&peer_id) {
                     log::info!("Connection to {peer_id} closed.");
@@ -134,30 +134,30 @@ impl PeerNetwork {
 
         //Initialize peer connection icecandidate event handler.
         let peer_network_clone = self.network_data.clone();
-        let _onicecandidate_callback = peer_connection.set_onicecandidate(move |event| {
+        let onicecandidate_callback = peer_connection.set_onicecandidate(move |event| {
             let mut peer_network_ref = peer_network_clone.borrow_mut();
-            let handshake_data = {
-                if let Some(PeerData { status: PeerStatus::Connecting(handshake_data), .. }) = peer_network_ref.peers.get_mut(&peer_id) {
-                    if let Some(candidate) = event.candidate() {
-                        //ICE candidate discovered, push into peer's candidate list.
-                        handshake_data.ice_candidates.push(candidate.into());
-                        return;
-                    } else {
-                        //No more ICE candidates to discover, send handshake.
-                        log::info!("{} ICE candidates gathered, sending handshake.", handshake_data.ice_candidates.len());
-                        std::mem::take(handshake_data)
-                    }
-                } else {
-                    log::warn!("ICE candidate discovered, but peer is not in connecting state.");
+            let handshake_data = if let Some(PeerData{ status: PeerStatus::Connecting(handshake_data), .. }) = peer_network_ref.peers.get_mut(&peer_id) {
+                if let Some(candidate) = event.candidate() {
+                    //ICE candidate discovered, push into peer's candidate list.
+                    handshake_data.ice_candidates.push(candidate.into());
                     return;
                 }
+                else {
+                    //No more ICE candidates to discover, send handshake.
+                    log::info!("{} ICE candidates gathered, sending handshake.", handshake_data.ice_candidates.len());
+                    std::mem::take(handshake_data)
+                }
+            }
+            else {
+                log::warn!("ICE candidate discovered, but peer is not in connecting state.");
+                return;
             };
             peer_network_ref.handshake_callback.as_mut()(handshake_data);
         });
 
         //Initialize data channel open event handler.
         let peer_network_clone = self.network_data.clone();
-        let _onopen_callback = data_channel.set_onopen(move || {
+        let onopen_callback = data_channel.set_onopen(move || {
             if let Some(peer_data) = peer_network_clone.borrow_mut().peers.get_mut(&peer_id) {
                 log::info!("Data Channel to {} opened!", peer_id);
                 peer_data.status = PeerStatus::Connected;
@@ -166,7 +166,7 @@ impl PeerNetwork {
 
         //Initialize data channel message event handler.
         let peer_network_clone = self.network_data.clone();
-        let _onmessage_callback = data_channel.set_onmessage(move |event| {
+        let onmessage_callback = data_channel.set_onmessage(move |event| {
             if let Some(data) = event.data().as_string() {
                 peer_network_clone.borrow_mut().message_callback.as_mut()(PeerMessage::String(data));
             }
@@ -186,10 +186,10 @@ impl PeerNetwork {
             }),
             peer_connection,
             data_channel,
-            _onconnectionstatechange_callback,
-            _onicecandidate_callback,
-            _onopen_callback,
-            _onmessage_callback,
+            onconnectionstatechange_callback,
+            onicecandidate_callback,
+            onopen_callback,
+            onmessage_callback,
         }
     }
 }
