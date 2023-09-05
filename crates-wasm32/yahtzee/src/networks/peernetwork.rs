@@ -2,26 +2,33 @@ use wasm_bindgen::prelude::*;
 use web_sys::{MessageEvent, RtcPeerConnectionIceEvent};
 use std::{rc::Rc, cell::RefCell, collections::BTreeMap};
 use js_sys::{ArrayBuffer, Uint8Array};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use crate::networks::webrtc::{ConfigurationBuilder, Configuration, PeerConnection, PeerConnectionState, DataChannel};
-pub use crate::networks::webrtc::IceCandidate;
 
-pub enum PeerMessage {
-    Connect(u32),
-    Disconnect(u32),
-    String(String),
-    Binary(Vec<u8>),
-}
 #[derive(Default)]
 pub struct PeerHandshake {
     pub source_id: u32,
     pub target_id: u32,
     pub sdp_description: String,
-    pub ice_candidates: Vec<IceCandidate>,
+    pub ice_candidates: Vec<(String, Option<String>, Option<u16>)>,
 }
+
+#[derive(Serialize, Deserialize)]
+struct MessageWrapper<T>(u32, T);
+
+pub enum PeerNetworkEvent<T> {
+    Handshake(PeerHandshake),
+    Connect(u32),
+    Disconnect(u32),
+    Message(u32, T),
+}
+
+
 enum PeerStatus {
     Connecting(PeerHandshake),
     Connected,
 }
+
 struct PeerData {
     status: PeerStatus,
     peer_connection: PeerConnection,
@@ -31,17 +38,19 @@ struct PeerData {
     _onopen_callback: Closure<dyn FnMut()>,
     _onmessage_callback: Closure<dyn FnMut(MessageEvent)>,
 }
+
 struct PeerNetworkData {
     peers: BTreeMap<u32, PeerData>,
-    handshake_callback: Rc<RefCell<dyn FnMut(PeerHandshake)>>,
-    message_callback: Rc<RefCell<dyn FnMut(PeerMessage)>>,
 }
-pub struct PeerNetwork {
+
+pub struct PeerNetwork<T> {
     user_id: u32,
     configuration: Configuration,
     network_data: Rc<RefCell<PeerNetworkData>>,
+    event_callback: Rc<RefCell<dyn FnMut(PeerNetworkEvent<T>)>>,
 }
-impl PeerNetwork {
+
+impl<T: Serialize + DeserializeOwned + 'static> PeerNetwork<T> {
     pub fn new() -> Self {
         let configuration = ConfigurationBuilder::new()
             .add_turn_server("turn:turn.joongle.dev:3478", "guest", "guest1234")
@@ -52,9 +61,8 @@ impl PeerNetwork {
             configuration,
             network_data: Rc::new(RefCell::new(PeerNetworkData {
                 peers: BTreeMap::new(),
-                handshake_callback: Rc::new(RefCell::new(move |_: PeerHandshake| log::warn!("Peer Network handshake callback is not initialized."))),
-                message_callback: Rc::new(RefCell::new(move |_: PeerMessage| log::warn!("Peer Network message callback is not initialized."))),
-            }))
+            })),
+            event_callback: Rc::new(RefCell::new(move |_: PeerNetworkEvent<T>| log::warn!("PeerNetwork event callback is not initialized."))),
         }
     }
     pub fn user_id(&self) -> u32 {
@@ -63,24 +71,16 @@ impl PeerNetwork {
     pub fn set_user_id(&mut self, id: u32) {
         self.user_id = id;
     }
-    pub fn broadcast_str(&self, data: &str) {
+    pub fn broadcast(&self, message: &T) {
+        let serialized = bincode::serialize(&message).unwrap();
         for peer in self.network_data.borrow().peers.values().filter(|peer| matches!(peer.status, PeerStatus::Connected)) {
-            peer.data_channel.send_str(data);
+            peer.data_channel.send_u8_array(serialized.as_slice());
         }
     }
-    pub fn broadcast_u8_array(&self, data: &[u8]) {
-        for peer in self.network_data.borrow().peers.values().filter(|peer| matches!(peer.status, PeerStatus::Connected)) {
-            peer.data_channel.send_u8_array(data);
-        }
-    }
-    pub fn send_str(&self, peer_id: u32, data: &str) {
+    pub fn send(&self, peer_id: u32, message: &T) {
+        let serialized = bincode::serialize(&MessageWrapper(self.user_id, message)).unwrap();
         if let Some(peer) = self.network_data.borrow().peers.get(&peer_id) {
-            peer.data_channel.send_str(data);
-        }
-    }
-    pub fn send_u8_array(&self, peer_id: u32, data: &[u8]) {
-        if let Some(peer) = self.network_data.borrow().peers.get(&peer_id) {
-            peer.data_channel.send_u8_array(data);
+            peer.data_channel.send_u8_array(serialized.as_slice());
         }
     }
     pub fn initiate_handshake(&self, peer_id: u32) {
@@ -108,7 +108,7 @@ impl PeerNetwork {
                 ) = peer_network_clone.borrow_mut().peers.get_mut(&handshake.source_id) {
                     peer_connection.receive_answer_sdp(handshake.sdp_description.as_str()).await;
                     for ice_candidate in std::mem::take(&mut handshake_out.ice_candidates) {
-                        peer_connection.add_ice_candidate(ice_candidate).await;
+                        peer_connection.add_ice_candidate(ice_candidate.into()).await;
                     }
                 }
             });
@@ -119,7 +119,7 @@ impl PeerNetwork {
             wasm_bindgen_futures::spawn_local(async move {
                 peer_data.peer_connection.receive_offer_sdp(handshake.sdp_description.as_str()).await;
                 for ice_candidate in std::mem::take(&mut handshake.ice_candidates) {
-                    peer_data.peer_connection.add_ice_candidate(ice_candidate).await;
+                    peer_data.peer_connection.add_ice_candidate(ice_candidate.into()).await;
                 }
                 if let PeerStatus::Connecting(ref mut handshake_data) = peer_data.status {
                     handshake_data.sdp_description = peer_data.peer_connection.create_answer_sdp().await;
@@ -128,11 +128,8 @@ impl PeerNetwork {
             });
         }
     }
-    pub fn set_handshake_callback<F: FnMut(PeerHandshake) + 'static>(&self, f: F) {
-        self.network_data.borrow_mut().handshake_callback = Rc::new(RefCell::new(f));
-    }
-    pub fn set_message_callback<F: FnMut(PeerMessage) + 'static>(&self, f: F) {
-        self.network_data.borrow_mut().message_callback = Rc::new(RefCell::new(f));
+    pub fn set_event_callback<F: FnMut(PeerNetworkEvent<T>) + 'static>(&mut self, f: F) {
+        self.event_callback = Rc::new(RefCell::new(f));
     }
     fn create_peer_data(&self, peer_id: u32) -> PeerData {
         //Create peer connection and data channel.
@@ -142,12 +139,12 @@ impl PeerNetwork {
         //Initialize peer connection connectionstatechange event handler.
         let peer_connection_clone = peer_connection.clone();
         let peer_network_clone = self.network_data.clone();
-        let message_callback = self.network_data.borrow().message_callback.clone();
+        let event_callback = self.event_callback.clone();
         let _onconnectionstatechange_callback = peer_connection.set_onconnectionstatechange(move || {
             if let PeerConnectionState::Closed | PeerConnectionState::Failed | PeerConnectionState::Disconnected = peer_connection_clone.connection_state() {
                 if let Some(peer_data) = peer_network_clone.borrow_mut().peers.remove(&peer_id) {
                     log::info!("Connection to {peer_id} closed.");
-                    message_callback.borrow_mut()(PeerMessage::Disconnect(peer_id));
+                    event_callback.borrow_mut()(PeerNetworkEvent::Disconnect(peer_id));
                     peer_data.data_channel.close();
                     peer_data.peer_connection.close();
                 }
@@ -156,13 +153,13 @@ impl PeerNetwork {
 
         //Initialize peer connection icecandidate event handler.
         let peer_network_clone = self.network_data.clone();
-        let handshake_callback = self.network_data.borrow().handshake_callback.clone();
+        let event_callback = self.event_callback.clone();
         let _onicecandidate_callback = peer_connection.set_onicecandidate(move |event| {
             let handshake_data = {
                 if let Some(PeerData { status: PeerStatus::Connecting(handshake_data), .. }) = peer_network_clone.borrow_mut().peers.get_mut(&peer_id) {
                     if let Some(candidate) = event.candidate() {
                         //ICE candidate discovered, push into peer's candidate list.
-                        handshake_data.ice_candidates.push(candidate.into());
+                        handshake_data.ice_candidates.push((candidate.candidate(), candidate.sdp_mid(), candidate.sdp_m_line_index()));
                         return;
                     } else {
                         //No more ICE candidates to discover, send handshake.
@@ -174,28 +171,27 @@ impl PeerNetwork {
                     return;
                 }
             };
-            handshake_callback.borrow_mut()(handshake_data);
+            event_callback.borrow_mut()(PeerNetworkEvent::Handshake(handshake_data));
         });
 
         //Initialize data channel open event handler.
         let peer_network_clone = self.network_data.clone();
-        let message_callback = self.network_data.borrow().message_callback.clone();
+        let event_callback = self.event_callback.clone();
         let _onopen_callback = data_channel.set_onopen(move || {
             if let Some(peer_data) = peer_network_clone.borrow_mut().peers.get_mut(&peer_id) {
                 log::info!("Data Channel to {} opened!", peer_id);
                 peer_data.status = PeerStatus::Connected;
             }
-            message_callback.borrow_mut()(PeerMessage::Connect(peer_id));
+            event_callback.borrow_mut()(PeerNetworkEvent::Connect(peer_id));
         });
 
         //Initialize data channel message event handler.
-        let message_callback = self.network_data.borrow().message_callback.clone();
+        let event_callback = self.event_callback.clone();
         let _onmessage_callback = data_channel.set_onmessage(move |event| {
-            if let Some(data) = event.data().as_string() {
-                message_callback.borrow_mut()(PeerMessage::String(data));
-            }
-            else if let Ok(data) = event.data().dyn_into::<ArrayBuffer>() {
-                message_callback.borrow_mut()(PeerMessage::Binary(Uint8Array::new(&data).to_vec()));
+            if let Ok(data) = event.data().dyn_into::<ArrayBuffer>() {
+                let data = Uint8Array::new(&data).to_vec();
+                let message: MessageWrapper<T> = bincode::deserialize(data.as_slice()).unwrap();
+                event_callback.borrow_mut()(PeerNetworkEvent::Message(message.0, message.1));
             }
             else {
                 log::warn!("Unhandled DataChannel message type.");
