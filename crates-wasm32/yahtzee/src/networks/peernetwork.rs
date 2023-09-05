@@ -167,7 +167,7 @@ impl PeerNetwork {
                 log::info!("Data Channel to {} opened!", peer_id);
                 peer_data.status = PeerStatus::Connected;
             }
-            peer_network_ref.message_callback.as_mut()(PeerMessage::Disconnect(peer_id));
+            peer_network_ref.message_callback.as_mut()(PeerMessage::Connect(peer_id));
         });
 
         //Initialize data channel message event handler.
