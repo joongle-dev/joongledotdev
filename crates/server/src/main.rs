@@ -24,7 +24,9 @@ const KEY_FILE: &str = "certs/key.pem";
 #[tokio::main]
 async fn main() -> Result<()> {
     let routes = Router::new()
-        .fallback_service(ServeDir::new("assets").fallback(ServeFile::new("assets/not_found.html")))
+        .fallback_service(ServeDir::new("assets")
+            .precompressed_gzip()
+            .not_found_service(ServeFile::new("assets/not_found.html")))
         .nest("/yahtzee", yahtzee::routes())
         .route("/hello", get(hello));
 
