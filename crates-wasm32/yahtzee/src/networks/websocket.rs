@@ -52,7 +52,7 @@ impl<T: Serialize + DeserializeOwned + 'static> WebSocket<T> {
             _onmessage_callback: onmessage_callback,
             _onopen_callback: onopen_callback,
             _onclose_callback: onclose_callback,
-            _phantom_data: PhantomData::default(),
+            _phantom_data: PhantomData,
         }
     }
     pub fn send(&self, message: T) {
