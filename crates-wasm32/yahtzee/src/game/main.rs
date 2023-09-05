@@ -2,10 +2,10 @@ use super::events::Event;
 use crate::platform::EventHandlerProxy;
 use crate::ui::{Ui};
 
-pub struct SubmitName {
+pub struct Main {
     _ui: Ui,
 }
-impl SubmitName {
+impl Main {
     pub fn new(event_handler: EventHandlerProxy<Event>) -> Self {
         let ui = Ui::new();
             ui.div().with_class("row heading").text("Yahtzee!");

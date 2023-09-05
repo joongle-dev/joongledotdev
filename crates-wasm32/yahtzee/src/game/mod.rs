@@ -5,14 +5,13 @@ pub mod events;
 use events::Event;
 
 mod main;
-use main::SubmitName;
+use main::Main;
 
 mod lobby;
-
 use lobby::Lobby;
 
 enum GameState {
-    SubmitName(SubmitName),
+    Main(Main),
     Lobby(Lobby)
 }
 pub struct Game {
@@ -23,7 +22,7 @@ pub struct Game {
 impl Game {
     pub fn new(renderer: Renderer, event_handler: EventHandlerProxy<Event>) -> Self {
         Self {
-            state: GameState::SubmitName(SubmitName::new(event_handler.clone())),
+            state: GameState::Main(Main::new(event_handler.clone())),
             renderer,
             event_handler,
         }
@@ -33,7 +32,7 @@ impl Game {
             panic!("Surface error: {:?}", err);
         }
         match &mut self.state {
-            GameState::SubmitName(_) => {}
+            GameState::Main(_) => {}
             GameState::Lobby(state) => state.update(timestamp),
         }
     }
@@ -41,18 +40,18 @@ impl Game {
         match event {
             Event::JoinLobby(name) => self.state = GameState::Lobby(Lobby::new(self.event_handler.clone(), name)),
             Event::WebSocketEvent(message) => match &mut self.state {
-                GameState::SubmitName(_) => {}
+                GameState::Main(_) => {}
                 GameState::Lobby(state) => state.web_socket_event(message),
             }
             Event::PeerNetworkEvent(message) => match &mut self.state {
-                GameState::SubmitName(_) => {}
+                GameState::Main(_) => {}
                 GameState::Lobby(state) => state.peer_network_event(message),
             }
         }
     }
     pub fn mousedown(&mut self, offset: (f32, f32)) {
         match &mut self.state {
-            GameState::SubmitName(_) => {}
+            GameState::Main(_) => {}
             GameState::Lobby(state) => state.mousedown(offset),
         }
     }
