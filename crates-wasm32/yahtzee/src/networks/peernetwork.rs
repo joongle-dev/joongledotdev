@@ -65,6 +65,21 @@ impl PeerNetwork {
             peer.data_channel.send_str(data);
         }
     }
+    pub fn broadcast_u8_array(&self, data: &[u8]) {
+        for peer in self.network_data.borrow().peers.values().filter(|peer| matches!(peer.status, PeerStatus::Connected)) {
+            peer.data_channel.send_u8_array(data);
+        }
+    }
+    pub fn send_str(&self, peer_id: u32, data: &str) {
+        if let Some(peer) = self.network_data.borrow().peers.get(&peer_id) {
+            peer.data_channel.send_str(data);
+        }
+    }
+    pub fn send_u8_array(&self, peer_id: u32, data: &[u8]) {
+        if let Some(peer) = self.network_data.borrow().peers.get(&peer_id) {
+            peer.data_channel.send_u8_array(data);
+        }
+    }
     pub fn initiate_handshake(&self, peer_id: u32) {
         let mut peer_data = self.create_peer_data(peer_id);
         let peer_network_clone = self.network_data.clone();

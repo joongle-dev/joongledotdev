@@ -82,6 +82,9 @@ impl DataChannel {
     pub fn send_str(&self, data: &str) {
         self.0.send_with_str(data).unwrap();
     }
+    pub fn send_u8_array(&self, data: &[u8]) {
+        self.0.send_with_u8_array(data).unwrap();
+    }
     pub fn close(&self) {
         self.0.close();
     }
