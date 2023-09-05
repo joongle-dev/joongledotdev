@@ -29,7 +29,7 @@ struct EventHandler<E> {
 }
 impl<E> EventHandler<E> {
     pub fn call(&mut self, event: Event<E>) {
-        if self.event_handler.as_mut()(event) {
+        if !self.event_handler.as_mut()(event) {
             self.window.cancel_animation_frame(self.animation_frame_id).unwrap_throw();
         }
     }
