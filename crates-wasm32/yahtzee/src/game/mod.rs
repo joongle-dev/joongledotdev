@@ -1,11 +1,14 @@
-use crate::events::Event;
 use crate::platform::EventHandlerProxy;
 use crate::graphics::Renderer;
+
+pub mod events;
+use events::Event;
 
 mod submit_name;
 use submit_name::SubmitName;
 
 mod lobby;
+
 use lobby::Lobby;
 
 enum GameState {

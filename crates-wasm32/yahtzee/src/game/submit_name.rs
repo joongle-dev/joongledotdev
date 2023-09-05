@@ -1,4 +1,4 @@
-use crate::events::Event;
+use super::events::Event;
 use crate::platform::EventHandlerProxy;
 use crate::ui::{Ui};
 

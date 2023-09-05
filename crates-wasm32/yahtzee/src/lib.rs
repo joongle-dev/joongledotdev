@@ -3,7 +3,6 @@ use wasm_bindgen::prelude::*;
 mod networks;
 mod ui;
 mod game;
-mod events;
 
 mod platform;
 use platform::{EventLoop, Event, PlatformEvent};
@@ -22,7 +21,7 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
     let mut game = game::Game::new(renderer, event_loop.event_handler_proxy());
 
     //Run application
-    event_loop.run(canvas, move |event: Event<events::Event>| {
+    event_loop.run(canvas, move |event: Event<game::events::Event>| {
         match event {
             Event::PlatformEvent(event) => {
                 match event {

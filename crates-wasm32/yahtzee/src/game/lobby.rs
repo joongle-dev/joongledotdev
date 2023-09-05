@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use std::collections::BTreeMap;
 
-use crate::events::{Event, WebSocketEvent, PeerNetworkEvent, WebSocketMessage, PeerMessage};
+use super::events::{Event, WebSocketEvent, PeerNetworkEvent, WebSocketMessage, PeerMessage};
 use crate::platform::EventHandlerProxy;
 use crate::networks::{websocket::WebSocket, peernetwork::PeerNetwork};
 use crate::ui::{Ui, div::Div};
