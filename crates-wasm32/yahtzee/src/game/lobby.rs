@@ -1,28 +1,48 @@
 use wasm_bindgen::prelude::*;
-use crate::events::Event;
-use crate::platform::EventHandlerProxy;
-use crate::networks::{websocket::{WebSocket, WebSocketMessage}, peernetwork::PeerNetwork};
-use crate::networks::peernetwork::{PeerHandshake, PeerMessage};
-use crate::ui::Ui;
+use std::collections::BTreeMap;
 
-#[derive(serde::Serialize, serde::Deserialize)]
-enum SocketMessage {
-    ConnectSuccess {
-        lobby_id: u64,
-        user_id: u32,
-        peers_id: Vec<u32>,
-    },
-    WebRtcHandshake {
-        source_id: u32,
-        target_id: u32,
-        sdp_description: String,
-        ice_candidates: Vec<(String, Option<String>, Option<u16>)>,
+use crate::events::{Event, WebSocketEvent, PeerNetworkEvent, WebSocketMessage, PeerMessage};
+use crate::platform::EventHandlerProxy;
+use crate::networks::{websocket::WebSocket, peernetwork::PeerNetwork};
+use crate::ui::{Ui, div::Div};
+
+struct UserData {
+    display_container: Div,
+    display_name: Div,
+    display_ping: Div,
+    ping_timestamp: Option<f64>,
+}
+impl UserData {
+    fn new() -> Self {
+        let document = web_sys::window().unwrap_throw().document().unwrap_throw();
+        let display_container = Div::new(document).with_class("user-display-container");
+        let display_name = display_container.div();
+        let display_ping = display_container.div();
+        Self {
+            display_container,
+            display_name,
+            display_ping,
+            ping_timestamp: None,
+        }
+    }
+    fn set_name(&self, name: &str) {
+        self.display_name.clear();
+        self.display_name.text(name);
     }
 }
+impl Drop for UserData {
+    fn drop(&mut self) {
+        self.display_container.remove();
+    }
+}
+
 pub struct Lobby {
     ui: Ui,
+    display_users: Div,
     name: String,
-    peer_network: PeerNetwork,
+    web_socket: WebSocket<WebSocketMessage>,
+    peer_network: PeerNetwork<PeerMessage>,
+    users_list: BTreeMap<u32, UserData>,
     address: String,
 }
 impl Lobby {
@@ -38,74 +58,99 @@ impl Lobby {
 
         let event_handler_clone = event_handler.clone();
         let web_socket = WebSocket::new(ws_address.as_str(), move |message| {
-            event_handler_clone.call(Event::WebSocketMessage(message));
+            event_handler_clone.call(Event::WebSocketEvent(message));
         });
 
-        let peer_network = PeerNetwork::new();
-            peer_network.set_handshake_callback(move |handshake| {
-                let message = SocketMessage::WebRtcHandshake {
-                    source_id: handshake.source_id,
-                    target_id: handshake.target_id,
-                    sdp_description: handshake.sdp_description,
-                    ice_candidates: handshake.ice_candidates.into_iter().map(|v| v.into()).collect(),
-                };
-                let serialized = bincode::serialize(&message).unwrap_throw();
-                web_socket.send_with_u8_array(serialized.as_slice());
-            });
-            peer_network.set_message_callback(move |message| {
-                event_handler.call(Event::PeerMessage(message));
-            });
+        let mut peer_network = PeerNetwork::new();
+        peer_network.set_event_callback(move |message| {
+            event_handler.call(Event::PeerNetworkEvent(message));
+        });
 
         let ui = Ui::new();
             ui.div().with_class("row heading").text("Yahtzee!");
+        let display_users = ui.div();
+
         Self {
             ui,
+            display_users,
             name,
+            web_socket,
             peer_network,
+            users_list: BTreeMap::new(),
             address: format!("{protocol}//{host}{path}?lobby_id="),
         }
     }
-    pub fn web_socket_message(&mut self, message: WebSocketMessage) {
+    pub fn update(&mut self, timestamp: f64) {
+    }
+    pub fn web_socket_event(&mut self, message: WebSocketEvent) {
         match message {
-            WebSocketMessage::String(_) => {}
-            WebSocketMessage::Binary(data) => {
-                log::info!("Received websocket message.");
-                let message: SocketMessage = bincode::deserialize(data.as_slice()).unwrap_throw();
+            WebSocketEvent::Connect => {}
+            WebSocketEvent::Disconnect => {}
+            WebSocketEvent::Message(message) => {
                 match message {
-                    SocketMessage::ConnectSuccess { lobby_id, user_id, peers_id } => {
+                    WebSocketMessage::ConnectSuccess { lobby_id, user_id, peers_id } => {
                         let invite_link = format!("{}{}", self.address, lobby_id);
                         log::info!("Assigned id {} in lobby {} with {} users", user_id, lobby_id, peers_id.len());
                         let row = self.ui.div().with_class("row");
-                            row.text("Invite code to lobby: ");
-                            row.anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
-
+                        row.text("Invite code to lobby: ");
+                        row.anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
+                        let user = UserData::new();
+                        user.set_name(self.name.as_str());
+                        self.add_user(user_id);
+                        self.set_user_name(user_id, self.name.as_str());
                         self.peer_network.set_user_id(user_id);
                         for peer_id in peers_id {
                             self.peer_network.initiate_handshake(peer_id);
                         }
                     }
-                    SocketMessage::WebRtcHandshake { source_id, target_id, sdp_description, ice_candidates } => {
-                        self.peer_network.receive_handshake(PeerHandshake {
-                            source_id,
-                            target_id,
-                            sdp_description,
-                            ice_candidates: ice_candidates.into_iter().map(|v| v.into()).collect(),
-                        });
+                    WebSocketMessage::PeerHandshake { .. } => {
+                        self.peer_network.receive_handshake(message.into());
                     }
                 }
             }
         }
     }
-    pub fn peer_message(&mut self, message: PeerMessage) {
+    pub fn peer_network_event(&mut self, message: PeerNetworkEvent) {
         match message {
-            PeerMessage::String(data) => self.ui.div().text(data.as_str()),
-            PeerMessage::Binary(_) => {}
-            PeerMessage::Connect(_) => {}
-            PeerMessage::Disconnect(_) => {}
+            PeerNetworkEvent::Connect(peer_id) => {
+                self.add_user(peer_id);
+                self.peer_network.send(peer_id, &PeerMessage::Ping);
+            },
+            PeerNetworkEvent::Disconnect(peer_id) => {
+                self.remove_user(peer_id)
+            },
+            PeerNetworkEvent::Message(peer_id, message) => {
+                match message {
+                    PeerMessage::Ping => {
+                        self.peer_network.send(peer_id, &PeerMessage::Pong(self.name.clone()));
+                    }
+                    PeerMessage::Pong(name) => {
+                        self.set_user_name(peer_id, name.as_str());
+                    }
+                }
+            },
+            PeerNetworkEvent::Handshake(handshake) => {
+                self.web_socket.send(handshake.into());
+            }
         }
     }
     pub fn mousedown(&mut self, offset: (f32, f32)) {
-        self.ui.div().text(format!("Sending click event at ({}, {}) to peers", offset.0, offset.1).as_str());
-        self.peer_network.broadcast_str(format!("Click from {} at ({}, {})", self.name, offset.0, offset.1).as_str());
+
+    }
+    fn add_user(&mut self, user_id: u32) {
+        self.users_list.insert(user_id, UserData::new());
+        for peer in self.users_list.values() {
+            self.display_users.append_child(&peer.display_container);
+        }
+    }
+    fn remove_user(&mut self, user_id: u32) {
+        if let Some(user) = self.users_list.remove(&user_id) {
+            self.display_users.remove_child(&user.display_container);
+        }
+    }
+    fn set_user_name(&self, user_id: u32, name: &str) {
+        if let Some(user) = self.users_list.get(&user_id) {
+            user.display_name.text(name);
+        }
     }
 }

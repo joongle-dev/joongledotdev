@@ -12,7 +12,7 @@ body {
     width: 100vw;
     height: 75vw; /* height:width ratio = 3/4 = .75  */
     max-height: 100vh;
-    max-width: 133.33vh; /* 4/3 = 1.333 */
+    max-width: 133.33vh; /* 100 * 4/3 = 133.33 */
     margin: auto;
     object-fit: contain;
 
@@ -39,14 +39,14 @@ body {
 }
 
 .anchor {
-    background-color: #FFFFFF22;
+    background-color: #FFFFFF11;
     color: black;
 
     pointer-events: auto;
 }
 
 .anchor:hover {
-    background-color: #FFFFFF33;
+    background-color: #FFFFFF22;
 }
 
 .input {
@@ -84,4 +84,12 @@ body {
 
 #canvas {
     pointer-events: auto;
+}
+
+.user-display-container {
+    background-color: #FFFFFF11;
+    width: 50vw;
+    max-width: 66.66vh; /* 50 * (4/3) = 66.66 */
+    flex-direction: row;
+    overflow-y: scroll;
 }
