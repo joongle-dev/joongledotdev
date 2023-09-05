@@ -57,6 +57,9 @@ impl PeerNetwork {
             }))
         }
     }
+    pub fn user_id(&self) -> u32 {
+        self.user_id
+    }
     pub fn set_user_id(&mut self, id: u32) {
         self.user_id = id;
     }
