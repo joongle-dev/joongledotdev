@@ -4,8 +4,8 @@ use crate::graphics::Renderer;
 pub mod events;
 use events::Event;
 
-mod submit_name;
-use submit_name::SubmitName;
+mod main;
+use main::SubmitName;
 
 mod lobby;
 
