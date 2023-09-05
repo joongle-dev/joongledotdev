@@ -20,6 +20,9 @@ impl Div {
         self.div.set_class_name(class);
         self
     }
+    pub fn clear(&self) {
+        self.div.replace_children_with_node_0();
+    }
     pub fn div(&self) -> Div {
         let div = Div::new(self.document.clone());
         self.div.append_child(div.as_ref()).unwrap_throw();
@@ -42,6 +45,12 @@ impl Div {
         let text_input = TextInput::new(self.document.clone());
         self.div.append_child(text_input.as_ref()).unwrap_throw();
         text_input
+    }
+    pub fn append_child<N: AsRef<Node>>(&self, node: &N) {
+        self.div.append_child(node.as_ref()).unwrap_throw();
+    }
+    pub fn remove_child<N: AsRef<Node>>(&self, node: &N) {
+        self.div.remove_child(node.as_ref()).unwrap_throw();
     }
     pub fn hide(&self) {
         self.div.set_hidden(true);
