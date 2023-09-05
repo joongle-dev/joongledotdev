@@ -1,8 +1,13 @@
 use wasm_bindgen::prelude::*;
 
+mod util;
+
 mod networks;
+
 mod ui;
+
 mod game;
+use game::{Context, Game};
 
 mod platform;
 use platform::{EventLoop, Event, PlatformEvent};
@@ -17,7 +22,7 @@ pub async fn run(canvas: web_sys::HtmlCanvasElement) {
 
     let event_loop = EventLoop::new();
 
-    let renderer = Renderer::new(canvas.clone()).await;
+    let context = Context::new(canvas.clone()).await;
     let mut game = game::Game::new(renderer, event_loop.event_handler_proxy());
 
     //Run application
