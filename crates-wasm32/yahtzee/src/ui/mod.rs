@@ -1,6 +1,6 @@
 pub mod div;
 pub mod button;
-pub mod textinput;
+pub mod text_input;
 pub mod anchor;
 
 use wasm_bindgen::prelude::*;

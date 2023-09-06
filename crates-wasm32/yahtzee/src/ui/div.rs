@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, HtmlDivElement, Node};
-use crate::ui::{anchor::Anchor, button::Button, textinput::TextInput};
+use crate::ui::{anchor::Anchor, button::Button, text_input::TextInput};
 
 pub struct Div {
     document: Document,

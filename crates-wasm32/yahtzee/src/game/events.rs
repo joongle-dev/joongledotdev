@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use serde::{Serialize, Deserialize};
 
-use crate::networks::peernetwork::PeerHandshake;
-use crate::util::fixedringbuffer::FixedRingBuffer;
+use crate::networks::peer_network::PeerHandshake;
+use crate::util::fixed_ring_buffer::FixedRingBuffer;
 
 pub struct LobbyJoin {
     pub lobby_id: u64,
@@ -57,8 +57,8 @@ pub enum PeerMessage {
     Pong(String),
 }
 
-pub type WebSocketEvent = crate::networks::websocket::WebSocketEvent<WebSocketMessage>;
-pub type PeerNetworkEvent = crate::networks::peernetwork::PeerNetworkEvent<PeerMessage>;
+pub type WebSocketEvent = crate::networks::web_socket::WebSocketEvent<WebSocketMessage>;
+pub type PeerNetworkEvent = crate::networks::peer_network::PeerNetworkEvent<PeerMessage>;
 pub enum Event {
     SubmitName(String),
     LobbyJoin(LobbyJoin),

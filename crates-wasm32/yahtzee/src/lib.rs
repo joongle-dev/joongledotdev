@@ -10,8 +10,8 @@ mod ui;
 mod game;
 use game::{Game, events::EventQueue};
 
-mod platform;
-use platform::{EventLoop, PlatformEvent};
+mod event_loop;
+use event_loop::{EventLoop, PlatformEvent};
 
 mod graphics;
 use graphics::Renderer;

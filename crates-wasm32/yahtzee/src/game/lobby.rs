@@ -4,7 +4,7 @@ use crate::game::events::LobbyJoin;
 use super::Context;
 
 use super::events::{Event, WebSocketEvent, PeerNetworkEvent, WebSocketMessage, PeerMessage};
-use crate::networks::{websocket::WebSocket, peernetwork::PeerNetwork};
+use crate::networks::{web_socket::WebSocket, peer_network::PeerNetwork};
 use crate::ui::{Ui, div::Div};
 
 struct UserData {

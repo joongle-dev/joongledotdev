@@ -3,7 +3,7 @@ use crate::game::events::{LobbyJoin, EventSender};
 use super::Context;
 
 use super::events::{Event, WebSocketEvent, WebSocketMessage};
-use crate::networks::{websocket::WebSocket};
+use crate::networks::{web_socket::WebSocket};
 
 pub struct Connecting {
     event_sender: EventSender,
