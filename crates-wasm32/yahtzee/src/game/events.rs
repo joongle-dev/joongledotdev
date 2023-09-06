@@ -1,6 +1,15 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 use serde::{Serialize, Deserialize};
 
 use crate::networks::peernetwork::PeerHandshake;
+use crate::util::fixedringbuffer::FixedRingBuffer;
+
+pub struct LobbyJoin {
+    pub lobby_id: u64,
+    pub user_id: u32,
+    pub peers_id: Vec<u32>,
+}
 
 #[derive(Serialize, Deserialize)]
 pub enum WebSocketMessage {
@@ -51,7 +60,28 @@ pub enum PeerMessage {
 pub type WebSocketEvent = crate::networks::websocket::WebSocketEvent<WebSocketMessage>;
 pub type PeerNetworkEvent = crate::networks::peernetwork::PeerNetworkEvent<PeerMessage>;
 pub enum Event {
-    JoinLobby(String),
+    SubmitName(String),
+    LobbyJoin(LobbyJoin),
     WebSocketEvent(WebSocketEvent),
     PeerNetworkEvent(PeerNetworkEvent),
+}
+
+#[derive(Clone)]
+pub struct EventSender(Rc<RefCell<FixedRingBuffer<Event, 64>>>);
+impl EventSender {
+    pub fn queue(&self, event: Event) {
+        self.0.borrow_mut().push_back(event).unwrap();
+    }
+}
+pub struct EventQueue(Rc<RefCell<FixedRingBuffer<Event, 64>>>);
+impl EventQueue {
+    pub fn new() -> Self {
+        Self(Rc::new(RefCell::new(FixedRingBuffer::new())))
+    }
+    pub fn create_sender(&self) -> EventSender {
+        EventSender(self.0.clone())
+    }
+    pub fn deque(&self) -> Option<Event> {
+        self.0.borrow_mut().pop_front().ok()
+    }
 }
