@@ -38,7 +38,7 @@ impl Drop for UserData {
 }
 
 pub struct Lobby {
-    ui: Ui,
+    _ui: Ui,
     display_users: Div,
     name: String,
     web_socket: WebSocket<WebSocketMessage>,
@@ -72,7 +72,7 @@ impl Lobby {
         }
 
         let mut lobby_state = Self {
-            ui,
+            _ui: ui,
             display_users,
             name,
             web_socket,
