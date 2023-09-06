@@ -82,6 +82,6 @@ impl EventQueue {
         EventSender(self.0.clone())
     }
     pub fn deque(&self) -> Option<Event> {
-        self.0.borrow_mut().pop_front().ok()
+        self.0.borrow_mut().pop_front()
     }
 }

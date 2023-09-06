@@ -3,8 +3,6 @@ use super::marker::{True, IsPowerOfTwo};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct OutOfSpaceError;
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub struct OutOfElementError;
 
 pub struct FixedRingBuffer<T, const C: usize> where IsPowerOfTwo<C>: True {
     head: usize,
@@ -36,14 +34,14 @@ impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
         self.push(self.head, val);
         Ok(())
     }
-    pub fn pop_front(&mut self) -> Result<T, OutOfElementError> {
-        if self.len == 0 {
-            return Err(OutOfElementError)
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.len == 0 { None }
+        else {
+            let val = self.pop(self.head);
+            self.len -= 1;
+            self.head = (self.head + 1) & (C - 1);
+            Some(val)
         }
-        let val = self.pop(self.head);
-        self.len -= 1;
-        self.head = (self.head + 1) & (C - 1);
-        Ok(val)
     }
     pub fn push_back(&mut self, val: T) -> Result<(), OutOfSpaceError> {
         if self.len == C {
@@ -53,12 +51,12 @@ impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
         self.len += 1;
         Ok(())
     }
-    pub fn pop_back(&mut self) -> Result<T, OutOfElementError> {
-        if self.len == 0 {
-            return Err(OutOfElementError)
+    pub fn pop_back(&mut self) -> Option<T> {
+        if self.len == 0 { None }
+        else {
+            self.len -= 1;
+            Some(self.pop((self.head + self.len) & (C - 1)))
         }
-        self.len -= 1;
-        Ok(self.pop((self.head + self.len) & (C - 1)))
     }
     fn push(&mut self, idx: usize, val: T) {
         self.buffer[idx] = MaybeUninit::new(val);
