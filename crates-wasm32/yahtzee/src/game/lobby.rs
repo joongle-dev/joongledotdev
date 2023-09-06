@@ -67,24 +67,26 @@ impl Lobby {
         peer_network.set_event_callback(move |message| {
             event_sender.queue(Event::PeerNetworkEvent(message));
         });
-        for peer_id in lobby_join.peers_id {
+        for &peer_id in lobby_join.peers_id.iter() {
             peer_network.initiate_handshake(peer_id);
         }
 
         let mut lobby_state = Self {
             _ui: ui,
             display_users,
-            name,
+            name: name.clone(),
             web_socket,
             peer_network,
             users_list: BTreeMap::new(),
         };
-        let user = UserData::new();
-        user.set_name(lobby_state.name.as_str());
+        for peer_id in lobby_join.peers_id {
+            lobby_state.add_user(peer_id)
+        }
         lobby_state.add_user(lobby_join.user_id);
+        lobby_state.update_user(lobby_join.user_id, name.as_str());
         lobby_state
     }
-    pub fn update(&mut self, timestamp: f64) {
+    pub fn update(&mut self, _timestamp: f64) {
     }
     pub fn web_socket_event(&mut self, message: WebSocketEvent) {
         match message {
@@ -107,10 +109,12 @@ impl Lobby {
             PeerNetworkEvent::Message(peer_id, message) => {
                 match message {
                     PeerMessage::Ping => {
+                        log::info!("Received ping");
                         self.peer_network.send(peer_id, &PeerMessage::Pong(self.name.clone()));
                     }
                     PeerMessage::Pong(name) => {
-                        self.set_user_name(peer_id, name.as_str());
+                        log::info!("Received pong");
+                        self.update_user(peer_id, name.as_str());
                     }
                 }
             },
@@ -123,7 +127,9 @@ impl Lobby {
 
     }
     fn add_user(&mut self, user_id: u32) {
-        self.users_list.insert(user_id, UserData::new());
+        let user = UserData::new();
+            user.set_name("Connecting...");
+        self.users_list.insert(user_id, user);
         for peer in self.users_list.values() {
             self.display_users.append_child(&peer.display_container);
         }
@@ -133,8 +139,9 @@ impl Lobby {
             self.display_users.remove_child(&user.display_container);
         }
     }
-    fn set_user_name(&self, user_id: u32, name: &str) {
+    fn update_user(&self, user_id: u32, name: &str) {
         if let Some(user) = self.users_list.get(&user_id) {
+            user.display_name.clear();
             user.display_name.text(name);
         }
     }
