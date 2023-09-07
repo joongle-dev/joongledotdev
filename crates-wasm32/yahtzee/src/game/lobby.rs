@@ -15,7 +15,7 @@ struct UserData {
 impl UserData {
     fn new() -> Self {
         let document = web_sys::window().unwrap_throw().document().unwrap_throw();
-        let display_container = Div::new(document).with_class("user-display-container");
+        let display_container = Div::new(document).with_class("user-display");
         let display_name = display_container.div();
         let display_ping = display_container.div();
         Self {
@@ -62,12 +62,10 @@ impl Lobby {
         let row = ui.div().with_class("row");
             row.text("Invite code to lobby: ");
             row.anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
-        let display_users = ui.div();
+        let display_users = ui.div().with_class("user-display-list");
         log::info!("Assigned id {} in lobby {} with {} users", user_id, lobby_id, peers_id.len());
 
-        let mut peer_network = PeerNetwork::new();
-        peer_network.set_user_id(user_id);
-        peer_network.set_event_callback(move |message| {
+        let peer_network = PeerNetwork::new(user_id, move |message| {
             event_sender.send(GameEvent::PeerNetworkEvent(message));
         });
         for &peer_id in peers_id.iter() {
