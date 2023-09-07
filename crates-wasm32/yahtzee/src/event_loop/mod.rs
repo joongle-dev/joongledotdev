@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, HtmlCanvasElement, MouseEvent};
-use std::{rc::Rc, cell::RefCell};
+use std::{rc::Rc, cell::{Cell, RefCell, OnceCell}};
+use crate::util::fixed_ring_buffer::FixedRingBuffer;
 
 pub enum MouseButton {
     Unknown, Left, Middle, Right,
@@ -13,56 +14,126 @@ pub enum PlatformEvent {
     MouseUp { timestamp: f64, offset: (f32, f32), button: MouseButton },
 }
 
-pub struct EventLoop<F: FnMut(PlatformEvent)->bool + 'static> {
-    window: Window,
-    event_handler: F,
-    animation_frame_id: i32,
-    animation_frame_closure: Option<Closure<dyn FnMut(JsValue)>>,
-    mouse_move_closure: Option<Closure<dyn FnMut(MouseEvent)>>,
-    mouse_down_closure: Option<Closure<dyn FnMut(MouseEvent)>>,
-    mouse_up_closure: Option<Closure<dyn FnMut(MouseEvent)>>,
+pub enum Event<T: 'static> {
+    PlatformEvent(PlatformEvent),
+    UserEvent(T),
 }
 
-impl<F: FnMut(PlatformEvent)->bool + 'static> EventLoop<F> {
-    pub fn run(canvas: HtmlCanvasElement, event_handler: F) {
-        let event_loop = Rc::new(RefCell::new(Self {
-            window: web_sys::window().unwrap_throw(),
-            event_handler,
-            animation_frame_id: 0,
-            animation_frame_closure: None,
-            mouse_move_closure: None,
-            mouse_down_closure: None,
-            mouse_up_closure: None,
-        }));
-        let mut event_loop_ref = event_loop.borrow_mut();
+pub struct EventHandler<T: 'static> {
+    window: Window,
+    event_queue: RefCell<FixedRingBuffer<Event<T>, 32>>,
+    event_handler: RefCell<Box<dyn FnMut(Event<T>)->bool>>,
+    animation_frame_id: Cell<i32>,
+    animation_frame_closure: OnceCell<Closure<dyn FnMut(JsValue)>>,
+    mouse_move_closure: OnceCell<Closure<dyn FnMut(MouseEvent)>>,
+    mouse_down_closure: OnceCell<Closure<dyn FnMut(MouseEvent)>>,
+    mouse_up_closure: OnceCell<Closure<dyn FnMut(MouseEvent)>>,
+}
+impl<T: 'static> EventHandler<T> {
+    fn queue_and_call(&self, event: Event<T>) {
+        if self.event_queue.borrow_mut().push_back(event).is_err() {
+            //TODO: Handle full queue.
+        }
+        if let Ok(mut handler_ref) = self.event_handler.try_borrow_mut() {
+            loop {
+                let event = self.event_queue.borrow_mut().pop_front();
+                if let Some(event) = event {
+                    if !handler_ref(event) {
+                        self.window.cancel_animation_frame(self.animation_frame_id.get()).unwrap();
+                    }
+                }
+                else {
+                    break
+                }
+            }
+            /*
+            while let Some(event) = self.event_queue.borrow_mut().pop_front() {
+                if !handler_ref(event) {
+                    self.window.cancel_animation_frame(self.animation_frame_id.get()).unwrap();
+                }
+            }
+            */
+        }
+    }
+    fn request_animation_frame(&self) {
+        if let Some(closure_ref) = self.animation_frame_closure.get() {
+            self.animation_frame_id.set(self.window.request_animation_frame(
+                closure_ref.as_ref().unchecked_ref()).unwrap_throw()
+            );
+        }
+    }
+}
+
+pub struct EventSender<T: 'static>(Rc<EventHandler<T>>);
+impl<T: 'static> EventSender<T> {
+    pub fn send(&self, event: T) {
+        self.0.queue_and_call(Event::UserEvent(event));
+    }
+}
+impl<T: 'static> Clone for EventSender<T> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.0 = source.0.clone();
+    }
+}
+
+pub struct EventLoop<T: 'static>(Rc<EventHandler<T>>);
+impl<T: 'static> EventLoop<T> {
+    pub fn new() -> Self {
+        Self(Rc::new(EventHandler {
+            window: web_sys::window().unwrap(),
+            event_queue: RefCell::new(FixedRingBuffer::new()),
+            event_handler: RefCell::new(Box::new(|_| {
+                log::warn!("Event handler is not initialized");
+                false
+            })),
+            animation_frame_id: Cell::new(0),
+            animation_frame_closure: OnceCell::new(),
+            mouse_move_closure: OnceCell::new(),
+            mouse_down_closure: OnceCell::new(),
+            mouse_up_closure: OnceCell::new(),
+        }))
+    }
+    pub fn get_event_queue(&self) -> EventSender<T> {
+        EventSender(self.0.clone())
+    }
+    pub fn run(self, canvas: HtmlCanvasElement, event_handler: impl FnMut(Event<T>)->bool + 'static) {
+        let _ = self.0.event_handler.replace(Box::new(event_handler));
+        let event_handler = self.0;
 
         //Animation frame callback setup
         let animation_frame_closure = {
-            let event_loop = event_loop.clone();
+            let event_handler = event_handler.clone();
             Closure::new(move |time: JsValue| {
                 let timestamp = time.as_f64().unwrap_throw();
-                let mut event_loop_ref = event_loop.borrow_mut();
-                event_loop_ref.request_animation_frame();
-                event_loop_ref.call(PlatformEvent::AnimationFrame { timestamp });
+                event_handler.request_animation_frame();
+                event_handler.queue_and_call(Event::PlatformEvent(
+                    PlatformEvent::AnimationFrame { timestamp }
+                ));
             })
         };
-        event_loop_ref.animation_frame_closure = Some(animation_frame_closure);
+        event_handler.animation_frame_closure.set(animation_frame_closure).unwrap();
 
         //Mouse move callback setup
         let mouse_move_closure = {
-            let event_loop = event_loop.clone();
+            let event_handler = event_handler.clone();
             Closure::new(move |event: MouseEvent| {
                 let timestamp = event.time_stamp();
                 let offset = (event.offset_x() as f32, event.offset_y() as f32);
-                event_loop.borrow_mut().call(PlatformEvent::MouseMove { timestamp, offset });
+                event_handler.queue_and_call(Event::PlatformEvent(
+                    PlatformEvent::MouseMove { timestamp, offset }
+                ));
             })
         };
         canvas.set_onmousemove(Some(mouse_move_closure.as_ref().unchecked_ref()));
-        event_loop_ref.mouse_move_closure = Some(mouse_move_closure);
+        event_handler.mouse_move_closure.set(mouse_move_closure).unwrap();
 
         //Mouse down callback setup
         let mouse_down_closure = {
-            let event_loop = event_loop.clone();
+            let event_handler = event_handler.clone();
             Closure::new(move |event: MouseEvent| {
                 let timestamp = event.time_stamp();
                 let offset = (event.offset_x() as f32, event.offset_y() as f32);
@@ -72,15 +143,17 @@ impl<F: FnMut(PlatformEvent)->bool + 'static> EventLoop<F> {
                     4 => MouseButton::Middle,
                     _ => MouseButton::Unknown
                 };
-                event_loop.borrow_mut().call(PlatformEvent::MouseDown { timestamp, offset, button });
+                event_handler.queue_and_call(Event::PlatformEvent(
+                    PlatformEvent::MouseDown { timestamp, offset, button }
+                ));
             })
         };
         canvas.set_onmousedown(Some(mouse_down_closure.as_ref().unchecked_ref()));
-        event_loop_ref.mouse_down_closure = Some(mouse_down_closure);
+        event_handler.mouse_down_closure.set(mouse_down_closure).unwrap();
 
         //Mouse up callback setup
         let mouse_up_closure = {
-            let event_loop = event_loop.clone();
+            let event_handler = event_handler.clone();
             Closure::new(move |event: MouseEvent| {
                 let timestamp = event.time_stamp();
                 let offset = (event.offset_x() as f32, event.offset_y() as f32);
@@ -90,23 +163,14 @@ impl<F: FnMut(PlatformEvent)->bool + 'static> EventLoop<F> {
                     4 => MouseButton::Middle,
                     _ => MouseButton::Unknown
                 };
-                event_loop.borrow_mut().call(PlatformEvent::MouseUp { timestamp, offset, button });
+                event_handler.queue_and_call(Event::PlatformEvent(
+                    PlatformEvent::MouseUp { timestamp, offset, button }
+                ));
             })
         };
         canvas.set_onmouseup(Some(mouse_up_closure.as_ref().unchecked_ref()));
-        event_loop_ref.mouse_up_closure = Some(mouse_up_closure);
+        event_handler.mouse_up_closure.set(mouse_up_closure).unwrap();
 
-        //Begin loop
-        event_loop_ref.request_animation_frame();
-    }
-    fn call(&mut self, event: PlatformEvent) {
-        if !(self.event_handler)(event) {
-            self.window.cancel_animation_frame(self.animation_frame_id).unwrap_throw();
-        }
-    }
-    fn request_animation_frame(&mut self) {
-        if let Some(ref animation_frame_closure) = self.animation_frame_closure {
-            self.animation_frame_id = self.window.request_animation_frame(animation_frame_closure.as_ref().unchecked_ref()).unwrap();
-        }
+        event_handler.request_animation_frame();
     }
 }

@@ -1,17 +1,17 @@
 use wasm_bindgen::prelude::*;
-use crate::game::events::{LobbyJoin, EventSender};
-use super::Context;
-
-use super::events::{Event, WebSocketEvent, WebSocketMessage};
+use crate::game::events::{GameEvent, WebSocketEvent, WebSocketMessage};
 use crate::networks::{web_socket::WebSocket};
+use crate::event_loop::EventSender;
+use crate::game::GameState;
+use crate::game::lobby::Lobby;
 
 pub struct Connecting {
-    event_sender: EventSender,
-    pub web_socket: WebSocket<WebSocketMessage>,
-    pub name: String,
+    event_sender: EventSender<GameEvent>,
+    web_socket: Option<WebSocket<WebSocketMessage>>,
+    name: String,
 }
 impl Connecting {
-    pub fn new(ctx: &mut Context, name: String) -> Self {
+    pub fn new(event_sender: EventSender<GameEvent>, name: String) -> Self {
         let window = web_sys::window().unwrap_throw();
         let location = window.location();
         let protocol = location.protocol().unwrap_throw();
@@ -21,14 +21,14 @@ impl Connecting {
         let ws_protocol = if protocol.contains("https:") { "wss:" } else { "ws:" };
         let ws_address = format!("{ws_protocol}//{host}{path}ws{search}");
 
-        let event_sender = ctx.event_sender.clone();
+        let event_sender_clone = event_sender.clone();
         let web_socket = WebSocket::new(ws_address.as_str(), move |message| {
-            event_sender.queue(Event::WebSocketEvent(message));
+            event_sender_clone.send(GameEvent::WebSocketEvent(message));
         });
 
         Self {
-            event_sender: ctx.event_sender.clone(),
-            web_socket,
+            event_sender,
+            web_socket: Some(web_socket),
             name
         }
     }
@@ -37,7 +37,15 @@ impl Connecting {
             WebSocketEvent::Connect => {}
             WebSocketEvent::Disconnect => {}
             WebSocketEvent::Message(WebSocketMessage::ConnectSuccess { lobby_id, user_id, peers_id }) => {
-                self.event_sender.queue(Event::LobbyJoin(LobbyJoin { lobby_id, user_id, peers_id }));
+                self.event_sender.send(GameEvent::ChangeGameState(GameState::Lobby(
+                    Lobby::new(self.event_sender.clone(),
+                               self.web_socket.take().unwrap(),
+                               lobby_id,
+                               std::mem::take(&mut self.name),
+                               user_id,
+                               peers_id
+                    )
+                )));
             }
             _ => {}
         }

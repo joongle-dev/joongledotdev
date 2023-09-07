@@ -1,5 +1,5 @@
 pub mod events;
-use events::Event;
+use events::GameEvent;
 
 mod main;
 use main::Main;
@@ -11,14 +11,9 @@ mod lobby;
 use lobby::Lobby;
 
 use crate::graphics::Renderer;
-use events::EventSender;
+use crate::event_loop::EventSender;
 
-pub struct Context {
-    pub renderer: Renderer,
-    pub event_sender: EventSender,
-}
-
-enum GameState {
+pub enum GameState {
     Main(Main),
     Connecting(Connecting),
     Lobby(Lobby),
@@ -27,22 +22,18 @@ enum GameState {
 
 pub struct Game {
     state: GameState,
-    ctx: Context,
+    renderer: Renderer,
 }
 
 impl Game {
-    pub fn new(renderer: Renderer, event_sender: EventSender) -> Self {
-        let mut ctx = Context {
-            renderer,
-            event_sender,
-        };
+    pub fn new(renderer: Renderer, event_sender: EventSender<GameEvent>) -> Self {
         Self {
-            state: GameState::Main(Main::new(&mut ctx)),
-            ctx,
+            state: GameState::Main(Main::new(event_sender)),
+            renderer,
         }
     }
     pub fn update(&mut self, timestamp: f64) {
-        if let Err(err) = self.ctx.renderer.render() {
+        if let Err(err) = self.renderer.render() {
             panic!("Surface error: {:?}", err);
         }
         match &mut self.state {
@@ -50,20 +41,17 @@ impl Game {
             _ => {}
         }
     }
-    pub fn handle_event(&mut self, event: Event) {
+    pub fn handle_event(&mut self, event: GameEvent) {
         match event {
-            Event::SubmitName(name) => {
-                self.state = GameState::Connecting(Connecting::new(&mut self.ctx, name))
+            GameEvent::ChangeGameState(state) => {
+                self.state = state;
             },
-            Event::LobbyJoin(lobby) => if let GameState::Connecting(state) = std::mem::replace(&mut self.state, GameState::None) {
-                self.state = GameState::Lobby(Lobby::new(&mut self.ctx, lobby, state.web_socket, state.name));
-            },
-            Event::WebSocketEvent(message) => match &mut self.state {
+            GameEvent::WebSocketEvent(message) => match &mut self.state {
                 GameState::Connecting(state) => state.web_socket_event(message),
                 GameState::Lobby(state) => state.web_socket_event(message),
                 _ => {}
             },
-            Event::PeerNetworkEvent(message) => match &mut self.state {
+            GameEvent::PeerNetworkEvent(message) => match &mut self.state {
                 GameState::Lobby(state) => state.peer_network_event(message),
                 _ => {}
             },
