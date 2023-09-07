@@ -3,7 +3,7 @@ use web_sys::{MessageEvent, RtcPeerConnectionIceEvent};
 use std::{rc::Rc, cell::RefCell, collections::BTreeMap};
 use js_sys::{ArrayBuffer, Uint8Array};
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
-use crate::networks::webrtc::{ConfigurationBuilder, Configuration, PeerConnection, PeerConnectionState, DataChannel};
+use crate::network::webrtc::{ConfigurationBuilder, Configuration, PeerConnection, PeerConnectionState, DataChannel};
 
 #[derive(Default)]
 pub struct PeerHandshake {

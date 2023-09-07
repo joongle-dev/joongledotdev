@@ -10,7 +10,7 @@ use connecting::Connecting;
 mod lobby;
 use lobby::Lobby;
 
-use crate::graphics::Renderer;
+use crate::render::Renderer;
 use crate::event_loop::EventSender;
 
 pub enum GameState {

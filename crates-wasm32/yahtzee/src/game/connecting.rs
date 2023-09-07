@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::game::events::{GameEvent, WebSocketEvent, WebSocketMessage};
-use crate::networks::{web_socket::WebSocket};
+use crate::network::{web_socket::WebSocket};
 use crate::event_loop::EventSender;
 use crate::game::GameState;
 use crate::game::lobby::Lobby;

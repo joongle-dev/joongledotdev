@@ -3,12 +3,12 @@ use web_sys::HtmlCanvasElement;
 
 mod util;
 
-mod networks;
+mod network;
 
 mod ui;
 
-mod graphics;
-use graphics::Renderer;
+mod render;
+use render::Renderer;
 
 mod game;
 use game::Game;
