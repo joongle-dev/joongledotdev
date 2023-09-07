@@ -3,21 +3,23 @@ body {
 }
 
 .ui {
+    --aspect: calc(4 / 3);
+    --vw: min(1vw, calc(1vh * var(--aspect)));
+    --vh: min(1vh, calc(1vw / var(--aspect)));
+
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
     right: 0;
 
-    width: 100vw;
-    height: 75vw; /* height:width ratio = 3/4 = .75  */
-    max-height: 100vh;
-    max-width: 133.33vh; /* 100 * 4/3 = 133.33 */
+    width: calc(var(--vw) * 100);
+    height: calc(var(--vh) * 100);
     margin: auto;
     object-fit: contain;
 
     font-family: Helvetica, sans-serif;
-    font-size: 3.5vmin;
+    font-size: calc(var(--vh) * 3.5);
 
     display: flex;
     flex-direction: column;
@@ -35,7 +37,7 @@ body {
 }
 
 .heading {
-    font-size: 7vmin;
+    font-size: calc(var(--vh) * 7);
 }
 
 .anchor {
@@ -53,7 +55,7 @@ body {
     background-color: #FFFFFF11;
     border: none;
     outline: none;
-    padding: 8px 16px;
+    padding: calc(var(--vw) * 1) calc(var(--vh) * 1);
     margin: 0;
     box-sizing: border-box;
 
@@ -67,7 +69,7 @@ body {
     background-color: #FFFFFF22;
     border: none;
     outline: none;
-    padding: 8px 16px;
+    padding: calc(var(--vw) * 1) calc(var(--vh) * 1);
     margin: 0;
     box-sizing: border-box;
 
@@ -86,10 +88,14 @@ body {
     pointer-events: auto;
 }
 
-.user-display-container {
-    background-color: #FFFFFF11;
-    width: 50vw;
-    max-width: 66.66vh; /* 50 * (4/3) = 66.66 */
-    flex-direction: row;
+.user-display-list {
+    flex-direction: column;
     overflow-y: scroll;
+}
+
+.user-display {
+    background-color: #FFFFFF11;
+    margin: 1vmin;
+    width: calc(var(--vw) * 40);
+    flex-direction: row;
 }
