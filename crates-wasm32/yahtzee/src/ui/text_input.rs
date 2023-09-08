@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, HtmlInputElement, KeyboardEvent, Node};
 
+#[derive(Clone)]
 pub struct TextInput {
     input: HtmlInputElement,
 }
@@ -35,6 +36,9 @@ impl TextInput {
     }
     pub fn set_value(&self, value: &str) {
         self.input.set_value(value);
+    }
+    pub fn focus(&self) {
+        self.focus();
     }
     pub fn hide(&self) {
         self.input.set_hidden(true);

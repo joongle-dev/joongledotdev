@@ -4,11 +4,9 @@ pub mod text_input;
 pub mod anchor;
 
 use wasm_bindgen::prelude::*;
-use web_sys::Document;
 use div::Div;
 
 pub struct Ui {
-    document: Document,
     root: Div,
 }
 impl Ui {
@@ -20,7 +18,7 @@ impl Ui {
         let root = Div::new(document.clone()).with_class("ui");
         body.append_child(root.as_ref()).unwrap_throw();
 
-        Self { document, root }
+        Self { root }
     }
     pub fn div(&self) -> Div {
         self.root.div()
