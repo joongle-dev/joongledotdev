@@ -1,7 +1,6 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, HtmlButtonElement, MouseEvent, Node};
 
-#[derive(Clone)]
 pub struct Button {
     button: HtmlButtonElement,
 }

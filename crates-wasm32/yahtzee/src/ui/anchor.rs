@@ -1,7 +1,6 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, HtmlAnchorElement, Node};
 
-#[derive(Clone)]
 pub struct Anchor {
     anchor: HtmlAnchorElement,
 }
