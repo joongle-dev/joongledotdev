@@ -1,8 +1,7 @@
 use serde::{Serialize, Deserialize};
 
-use crate::networks::peer_network::PeerHandshake;
-
-use super::GameState;
+use crate::network::peer_network::PeerHandshake;
+use super::scene::GameScene;
 
 #[derive(Serialize, Deserialize)]
 pub enum WebSocketMessage {
@@ -50,10 +49,10 @@ pub enum PeerMessage {
     Pong(String),
 }
 
-pub type WebSocketEvent = crate::networks::web_socket::WebSocketEvent<WebSocketMessage>;
-pub type PeerNetworkEvent = crate::networks::peer_network::PeerNetworkEvent<PeerMessage>;
+pub type WebSocketEvent = crate::network::web_socket::WebSocketEvent<WebSocketMessage>;
+pub type PeerNetworkEvent = crate::network::peer_network::PeerNetworkEvent<PeerMessage>;
 pub enum GameEvent {
-    ChangeGameState(GameState),
+    ChangeGameScene(Box<dyn GameScene>),
     WebSocketEvent(WebSocketEvent),
     PeerNetworkEvent(PeerNetworkEvent),
 }

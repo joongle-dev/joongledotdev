@@ -30,7 +30,7 @@ impl Renderer {
             }
         ).await {
             Some(adapter) => adapter,
-            None => panic!("Failed graphics adapter request.")
+            None => panic!("Failed render adapter request.")
         };
         let adapter_info = adapter.get_info();
         log::info!("Graphics adapter name: {}", adapter_info.name);
@@ -46,7 +46,7 @@ impl Renderer {
             None
         ).await {
             Ok(device_queue) => device_queue,
-            Err(error) => panic!("Failed graphics device request: {error}")
+            Err(error) => panic!("Failed render device request: {error}")
         };
 
         let surface_capabilities = surface.get_capabilities(&adapter);

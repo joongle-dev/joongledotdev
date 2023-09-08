@@ -1,9 +1,10 @@
 use wasm_bindgen::prelude::*;
 use std::collections::BTreeMap;
 
-use super::events::{GameEvent, WebSocketEvent, PeerNetworkEvent, WebSocketMessage, PeerMessage};
-use crate::networks::{web_socket::WebSocket, peer_network::PeerNetwork};
+use crate::network::{web_socket::WebSocket, peer_network::PeerNetwork};
 use crate::event_loop::EventSender;
+use crate::game::events::{GameEvent, PeerMessage, PeerNetworkEvent, WebSocketEvent, WebSocketMessage};
+use crate::game::scene::GameScene;
 use crate::ui::{Ui, div::Div};
 
 struct UserData {
@@ -58,10 +59,10 @@ impl Lobby {
         let path = location.pathname().unwrap_throw();
         let invite_link = format!("{protocol}//{host}{path}?lobby_id={}", lobby_id);
         let ui = Ui::new();
-            ui.div().with_class("row heading").text("Yahtzee!");
+        ui.div().with_class("row heading").text("Yahtzee!");
         let row = ui.div().with_class("row");
-            row.text("Invite code to lobby: ");
-            row.anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
+        row.text("Invite code to lobby: ");
+        row.anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
         let display_users = ui.div().with_class("user-display-list");
         log::info!("Assigned id {} in lobby {} with {} users", user_id, lobby_id, peers_id.len());
 
@@ -89,47 +90,12 @@ impl Lobby {
     }
     pub fn update(&mut self, _timestamp: f64) {
     }
-    pub fn web_socket_event(&mut self, message: WebSocketEvent) {
-        match message {
-            WebSocketEvent::Connect => {}
-            WebSocketEvent::Disconnect => {}
-            WebSocketEvent::Message(message) => if let WebSocketMessage::PeerHandshake { .. } = message {
-                self.peer_network.receive_handshake(message.into());
-            }
-        }
-    }
-    pub fn peer_network_event(&mut self, message: PeerNetworkEvent) {
-        match message {
-            PeerNetworkEvent::Connect(peer_id) => {
-                self.add_user(peer_id);
-                self.peer_network.send(peer_id, &PeerMessage::Ping);
-            },
-            PeerNetworkEvent::Disconnect(peer_id) => {
-                self.remove_user(peer_id)
-            },
-            PeerNetworkEvent::Message(peer_id, message) => {
-                match message {
-                    PeerMessage::Ping => {
-                        log::info!("Received ping");
-                        self.peer_network.send(peer_id, &PeerMessage::Pong(self.username.clone()));
-                    }
-                    PeerMessage::Pong(name) => {
-                        log::info!("Received pong");
-                        self.update_user(peer_id, name.as_str());
-                    }
-                }
-            },
-            PeerNetworkEvent::Handshake(handshake) => {
-                self.web_socket.send(handshake.into());
-            }
-        }
-    }
     pub fn mousedown(&mut self, offset: (f32, f32)) {
 
     }
     fn add_user(&mut self, user_id: u32) {
         let user = UserData::new();
-            user.set_name("Connecting...");
+        user.set_name("Connecting...");
         self.users_list.insert(user_id, user);
         for peer in self.users_list.values() {
             self.display_users.append_child(&peer.display_container);
@@ -144,6 +110,48 @@ impl Lobby {
         if let Some(user) = self.users_list.get(&user_id) {
             user.display_name.clear();
             user.display_name.text(name);
+        }
+    }
+}
+impl GameScene for Lobby {
+    fn update(&mut self, time: f64) {
+        todo!()
+    }
+
+    fn handle_event(&mut self, event: GameEvent) {
+        match event {
+            GameEvent::ChangeGameScene(_) => {}
+            GameEvent::WebSocketEvent(event) => match event {
+                WebSocketEvent::Connect => {}
+                WebSocketEvent::Disconnect => {}
+                WebSocketEvent::Message(message) => if let WebSocketMessage::PeerHandshake { .. } = message {
+                    self.peer_network.receive_handshake(message.into());
+                }
+            },
+            GameEvent::PeerNetworkEvent(event) => match event {
+                PeerNetworkEvent::Connect(peer_id) => {
+                    self.add_user(peer_id);
+                    self.peer_network.send(peer_id, &PeerMessage::Ping);
+                },
+                PeerNetworkEvent::Disconnect(peer_id) => {
+                    self.remove_user(peer_id)
+                },
+                PeerNetworkEvent::Message(peer_id, message) => {
+                    match message {
+                        PeerMessage::Ping => {
+                            log::info!("Received ping");
+                            self.peer_network.send(peer_id, &PeerMessage::Pong(self.username.clone()));
+                        }
+                        PeerMessage::Pong(name) => {
+                            log::info!("Received pong");
+                            self.update_user(peer_id, name.as_str());
+                        }
+                    }
+                },
+                PeerNetworkEvent::Handshake(handshake) => {
+                    self.web_socket.send(handshake.into());
+                }
+            },
         }
     }
 }
