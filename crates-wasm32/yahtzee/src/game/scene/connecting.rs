@@ -1,9 +1,8 @@
 use wasm_bindgen::prelude::*;
-use crate::game::events::{GameEvent, WebSocketEvent, WebSocketMessage};
 use crate::network::{web_socket::WebSocket};
 use crate::event_loop::EventSender;
-use crate::game::GameState;
-use crate::game::lobby::Lobby;
+use crate::game::events::{GameEvent, WebSocketEvent, WebSocketMessage};
+use super::{GameScene, lobby::Lobby};
 
 pub struct Connecting {
     event_sender: EventSender<GameEvent>,
@@ -32,22 +31,30 @@ impl Connecting {
             name
         }
     }
-    pub fn web_socket_event(&mut self, message: WebSocketEvent) {
-        match message {
-            WebSocketEvent::Connect => {}
-            WebSocketEvent::Disconnect => {}
-            WebSocketEvent::Message(WebSocketMessage::ConnectSuccess { lobby_id, user_id, peers_id }) => {
-                self.event_sender.send(GameEvent::ChangeGameState(GameState::Lobby(
-                    Lobby::new(self.event_sender.clone(),
-                               self.web_socket.take().unwrap(),
-                               lobby_id,
-                               std::mem::take(&mut self.name),
-                               user_id,
-                               peers_id
-                    )
-                )));
+}
+impl GameScene for Connecting {
+    fn update(&mut self, time: f64) {
+        todo!()
+    }
+
+    fn handle_event(&mut self, event: GameEvent) {
+        if let GameEvent::WebSocketEvent(event) = event {
+            match event {
+                WebSocketEvent::Connect => {}
+                WebSocketEvent::Disconnect => {}
+                WebSocketEvent::Message(WebSocketMessage::ConnectSuccess { lobby_id, user_id, peers_id }) => {
+                    self.event_sender.send(GameEvent::ChangeGameScene(Box::new(
+                        Lobby::new(self.event_sender.clone(),
+                                   self.web_socket.take().unwrap(),
+                                   lobby_id,
+                                   std::mem::take(&mut self.name),
+                                   user_id,
+                                   peers_id
+                        )
+                    )));
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 }
