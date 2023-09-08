@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, HtmlCanvasElement, MouseEvent};
 use std::{rc::Rc, cell::{Cell, RefCell, OnceCell}};
-use crate::util::fixed_ring_buffer::FixedRingBuffer;
+use crate::util::ring_buffer::FixedRingBuffer;
 
 pub enum MouseButton {
     Unknown, Left, Middle, Right,
