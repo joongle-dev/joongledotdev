@@ -31,6 +31,10 @@ impl TextInput {
         self.input.set_class_name(class);
         self
     }
+    pub fn with_max_length(self, length: u32) -> Self {
+        self.input.set_max_length(length as i32);
+        self
+    }
     pub fn value(&self) -> String {
         self.input.value()
     }

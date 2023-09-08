@@ -89,7 +89,7 @@ body {
 }
 
 .user-display-list {
-    width: calc(var(--vw) * 40);
+    width: calc(var(--vw) * 50);
     margin: 1vmin;
 
     flex-direction: column;
