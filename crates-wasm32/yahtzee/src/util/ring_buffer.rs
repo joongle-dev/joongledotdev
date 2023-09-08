@@ -62,7 +62,7 @@ impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
         self.buffer[idx] = MaybeUninit::new(val);
     }
     fn pop(&mut self, idx: usize) -> T {
-        unsafe { core::mem::replace(&mut self.buffer[idx], Self::UNINIT).assume_init() }
+        unsafe { self.buffer[idx].assume_init_read() }
     }
 }
 
