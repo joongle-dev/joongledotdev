@@ -33,9 +33,7 @@ impl Connecting {
     }
 }
 impl GameScene for Connecting {
-    fn update(&mut self, time: f64) {
-        todo!()
-    }
+    fn update(&mut self, _time: f64) {}
 
     fn handle_event(&mut self, event: GameEvent) {
         if let GameEvent::WebSocketEvent(event) = event {

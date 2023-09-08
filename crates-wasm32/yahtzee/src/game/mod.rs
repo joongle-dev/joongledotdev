@@ -30,6 +30,4 @@ impl Game {
             _ => self.scene.handle_event(event)
         }
     }
-    pub fn mousedown(&mut self, offset: (f32, f32)) {
-    }
 }

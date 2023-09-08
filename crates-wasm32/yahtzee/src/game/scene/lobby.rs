@@ -88,11 +88,7 @@ impl Lobby {
         lobby_state.update_user(user_id, username.as_str());
         lobby_state
     }
-    pub fn update(&mut self, _timestamp: f64) {
-    }
-    pub fn mousedown(&mut self, offset: (f32, f32)) {
 
-    }
     fn add_user(&mut self, user_id: u32) {
         let user = UserData::new();
         user.set_name("Connecting...");
@@ -101,11 +97,13 @@ impl Lobby {
             self.display_users.append_child(&peer.display_container);
         }
     }
+
     fn remove_user(&mut self, user_id: u32) {
         if let Some(user) = self.users_list.remove(&user_id) {
             self.display_users.remove_child(&user.display_container);
         }
     }
+
     fn update_user(&self, user_id: u32, name: &str) {
         if let Some(user) = self.users_list.get(&user_id) {
             user.display_name.clear();
@@ -114,9 +112,7 @@ impl Lobby {
     }
 }
 impl GameScene for Lobby {
-    fn update(&mut self, time: f64) {
-        todo!()
-    }
+    fn update(&mut self, _time: f64) {}
 
     fn handle_event(&mut self, event: GameEvent) {
         match event {

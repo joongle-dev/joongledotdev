@@ -33,11 +33,7 @@ impl Main {
     }
 }
 impl GameScene for Main {
-    fn update(&mut self, time: f64) {
-        todo!()
-    }
+    fn update(&mut self, _time: f64) {}
 
-    fn handle_event(&mut self, event: GameEvent) {
-        todo!()
-    }
+    fn handle_event(&mut self, _event: GameEvent) {}
 }
