@@ -1,4 +1,4 @@
-use std::mem::MaybeUninit;
+use core::mem::MaybeUninit;
 use super::marker::{True, IsPowerOfTwo};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -62,7 +62,7 @@ impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
         self.buffer[idx] = MaybeUninit::new(val);
     }
     fn pop(&mut self, idx: usize) -> T {
-        unsafe { std::mem::replace(&mut self.buffer[idx], Self::UNINIT).assume_init() }
+        unsafe { core::mem::replace(&mut self.buffer[idx], Self::UNINIT).assume_init() }
     }
 }
 
