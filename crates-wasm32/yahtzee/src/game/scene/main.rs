@@ -19,6 +19,7 @@ impl Main {
                     Connecting::new(event_sender_clone.clone(), name)
                 )));
             });
+            name_input.clone().focus();
 
             ui.button().with_text("Join Lobby").with_callback(move || {
                 event_sender.send(GameEvent::ChangeGameScene(Box::new(

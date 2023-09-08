@@ -43,6 +43,9 @@ impl TextInput {
     pub fn show(&self) {
         self.input.set_hidden(false);
     }
+    pub fn focus(&self) {
+        self.input.focus().unwrap_throw();
+    }
 }
 impl AsRef<Node> for TextInput {
     fn as_ref(&self) -> &Node {
