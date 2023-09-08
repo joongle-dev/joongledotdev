@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Document, HtmlInputElement, KeyboardEvent, Node};
 
+#[derive(Clone)]
 pub struct TextInput {
     input: HtmlInputElement,
 }
