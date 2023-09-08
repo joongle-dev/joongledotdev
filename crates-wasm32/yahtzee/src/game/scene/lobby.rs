@@ -46,23 +46,22 @@ pub struct Lobby {
     users_list: BTreeMap<u32, UserData>,
 }
 impl Lobby {
-    pub fn new(event_sender: EventSender<GameEvent>,
-               web_socket: WebSocket<WebSocketMessage>,
-               lobby_id: u64,
-               username: String,
-               user_id: u32,
-               peers_id: Vec<u32>) -> Self {
+    pub fn new(event_sender: EventSender<GameEvent>, web_socket: WebSocket<WebSocketMessage>, lobby_id: u64,
+               username: String, user_id: u32, peers_id: Vec<u32>) -> Self {
         let window = web_sys::window().unwrap_throw();
         let location = window.location();
         let protocol = location.protocol().unwrap_throw();
         let host = location.host().unwrap_throw();
         let path = location.pathname().unwrap_throw();
+
         let invite_link = format!("{protocol}//{host}{path}?lobby_id={}", lobby_id);
+
         let ui = Ui::new();
-        ui.div().with_class("row heading").text("Yahtzee!");
-        let row = ui.div().with_class("row");
-        row.text("Invite code to lobby: ");
-        row.anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
+            ui.div().with_class("row heading").text("Yahtzee!");
+            ui.div().with_class("row").text("Invite code to lobby: ");
+            ui.div().with_class("row").anchor().with_text(invite_link.as_str()).with_link(invite_link.as_str());
+            ui.div().with_class("row").text("Users in this lobby:");
+
         let display_users = ui.div().with_class("user-display-list");
         log::info!("Assigned id {} in lobby {} with {} users", user_id, lobby_id, peers_id.len());
 

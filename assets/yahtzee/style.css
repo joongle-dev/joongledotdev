@@ -19,7 +19,7 @@ body {
     object-fit: contain;
 
     font-family: Helvetica, sans-serif;
-    font-size: calc(var(--vh) * 3.5);
+    font-size: calc(var(--vh) * 7);
 
     display: flex;
     flex-direction: column;
@@ -37,7 +37,7 @@ body {
 }
 
 .heading {
-    font-size: calc(var(--vh) * 7);
+    font-size: calc(var(--vh) * 14);
 }
 
 .anchor {
@@ -89,13 +89,17 @@ body {
 }
 
 .user-display-list {
+    width: calc(var(--vw) * 40);
+    margin: 1vmin;
+
     flex-direction: column;
     overflow-y: scroll;
+    pointer-events: auto;
 }
 
 .user-display {
     background-color: #FFFFFF11;
-    margin: 1vmin;
-    width: calc(var(--vw) * 40);
+    margin-bottom: 1vmin;
+
     flex-direction: row;
 }
