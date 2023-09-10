@@ -5,18 +5,18 @@ use super::marker::{True, IsPowerOfTwo};
 pub struct OutOfSpaceError;
 
 pub struct FixedRingBuffer<T, const C: usize> where IsPowerOfTwo<C>: True {
+    buffer: [MaybeUninit<T>; C],
     head: usize,
     len: usize,
-    buffer: [MaybeUninit<T>; C],
 }
 
 impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
     const UNINIT: MaybeUninit<T> = MaybeUninit::uninit(); //Constant used to initialize buffer.
     pub fn new() -> Self {
         Self {
+            buffer: [Self::UNINIT; C],
             head: 0,
             len: 0,
-            buffer: [Self::UNINIT; C],
         }
     }
     pub fn len(&self) -> usize {
@@ -25,44 +25,44 @@ impl<T, const C: usize> FixedRingBuffer<T, C> where IsPowerOfTwo<C>: True {
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
-    pub fn push_front(&mut self, val: T) -> Result<(), OutOfSpaceError> {
+    pub fn try_push_front(&mut self, val: T) -> Result<(), OutOfSpaceError> {
         if self.len == C {
             return Err(OutOfSpaceError)
         }
         self.len += 1;
         self.head = (self.head + C - 1) & (C - 1);
-        self.push(self.head, val);
+        self.buffer[self.head] = MaybeUninit::new(val);
         Ok(())
     }
-    pub fn pop_front(&mut self) -> Option<T> {
-        if self.len == 0 { None }
-        else {
-            let val = self.pop(self.head);
-            self.len -= 1;
-            self.head = (self.head + 1) & (C - 1);
-            Some(val)
-        }
+    pub fn push_front(&mut self, val: T) {
+        self.try_push_front(val).unwrap()
     }
-    pub fn push_back(&mut self, val: T) -> Result<(), OutOfSpaceError> {
+    pub fn pop_front(&mut self) -> Option<T> {
+        if self.len == 0 {
+            return None
+        }
+        let val = unsafe { self.buffer[self.head].assume_init_read() };
+        self.len -= 1;
+        self.head = (self.head + 1) & (C - 1);
+        Some(val)
+    }
+    pub fn try_push_back(&mut self, val: T) -> Result<(), OutOfSpaceError> {
         if self.len == C {
             return Err(OutOfSpaceError)
         }
-        self.push((self.head + self.len) & (C - 1), val);
+        self.buffer[self.head + self.len] = MaybeUninit::new(val);
         self.len += 1;
         Ok(())
     }
+    pub fn push_back(&mut self, val: T) {
+        self.try_push_back(val).unwrap()
+    }
     pub fn pop_back(&mut self) -> Option<T> {
-        if self.len == 0 { None }
-        else {
-            self.len -= 1;
-            Some(self.pop((self.head + self.len) & (C - 1)))
+        if self.len == 0 {
+            return None
         }
-    }
-    fn push(&mut self, idx: usize, val: T) {
-        self.buffer[idx] = MaybeUninit::new(val);
-    }
-    fn pop(&mut self, idx: usize) -> T {
-        unsafe { self.buffer[idx].assume_init_read() }
+        self.len -= 1;
+        Some(unsafe { self.buffer[(self.head + self.len) & (C - 1)].assume_init_read() })
     }
 }
 
