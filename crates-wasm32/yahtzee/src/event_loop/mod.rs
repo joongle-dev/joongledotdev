@@ -31,33 +31,15 @@ pub struct EventHandler<T: 'static> {
 }
 impl<T: 'static> EventHandler<T> {
     fn queue_and_call(&self, event: Event<T>) {
-        if self.event_queue.borrow_mut().push_back(event).is_err() {
+        if self.event_queue.borrow_mut().try_push_back(event).is_err() {
             //TODO: Handle full queue.
         }
         if let Ok(mut handler_ref) = self.event_handler.try_borrow_mut() {
-            //=================================================================================
-            loop {
-                let event = self.event_queue.borrow_mut().pop_front();
-                if let Some(event) = event {
-                    if !handler_ref(event) {
-                        self.window.cancel_animation_frame(self.animation_frame_id.get()).unwrap();
-                    }
-                }
-                else {
-                    break
-                }
-            }
-            // Below is a cleaner version of above code, but RefMut of event_queue doesn't seem to drop
-            // in after the while let line when compiling in my laptop whereas it drops when compiled in
-            // my desktop.
-            /*
             while let Some(event) = self.event_queue.borrow_mut().pop_front() {
                 if !handler_ref(event) {
                     self.window.cancel_animation_frame(self.animation_frame_id.get()).unwrap();
                 }
             }
-            */
-            //=================================================================================
         }
     }
     fn request_animation_frame(&self) {
