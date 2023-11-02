@@ -1,7 +1,7 @@
 use wasm_bindgen::prelude::*;
 use web_sys::{Window, HtmlCanvasElement, MouseEvent};
 use std::{rc::Rc, cell::{Cell, RefCell, OnceCell}};
-use crate::util::ring_buffer::FixedRingBuffer;
+use crate::util::fixed_ring_buffer::FixedRingBuffer;
 
 pub enum MouseButton {
     Unknown, Left, Middle, Right,
@@ -31,11 +31,11 @@ pub struct EventHandler<T: 'static> {
 }
 impl<T: 'static> EventHandler<T> {
     fn queue_and_call(&self, event: Event<T>) {
-        if self.event_queue.borrow_mut().try_push_back(event).is_err() {
+        if self.event_queue.borrow_mut().push_back(event).is_err() {
             //TODO: Handle full queue.
         }
         if let Ok(mut handler_ref) = self.event_handler.try_borrow_mut() {
-            while let Some(event) = self.event_queue.borrow_mut().pop_front() {
+            while let Some(event) = { let ev = self.event_queue.borrow_mut().pop_front(); ev } {
                 if !handler_ref(event) {
                     self.window.cancel_animation_frame(self.animation_frame_id.get()).unwrap();
                 }
