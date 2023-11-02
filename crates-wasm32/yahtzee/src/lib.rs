@@ -1,3 +1,5 @@
+extern crate core;
+
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
