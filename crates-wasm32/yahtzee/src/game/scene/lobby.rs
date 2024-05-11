@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 use std::collections::BTreeMap;
 
 use crate::network::{web_socket::WebSocket, peer_network::PeerNetwork};
-use crate::event_loop::EventSender;
+use crate::event_loop::EventDispatcherProxy;
 use crate::game::events::{GameEvent, PeerMessage, PeerNetworkEvent, WebSocketEvent, WebSocketMessage};
 use crate::game::scene::GameScene;
 use crate::ui::{Ui, div::Div};
@@ -46,7 +46,7 @@ pub struct Lobby {
     users_list: BTreeMap<u32, UserData>,
 }
 impl Lobby {
-    pub fn new(event_sender: EventSender<GameEvent>, web_socket: WebSocket<WebSocketMessage>, lobby_id: u64,
+    pub fn new(event_sender: EventDispatcherProxy<GameEvent>, web_socket: WebSocket<WebSocketMessage>, lobby_id: u64,
                username: String, user_id: u32, peers_id: Vec<u32>) -> Self {
         let window = web_sys::window().unwrap_throw();
         let location = window.location();

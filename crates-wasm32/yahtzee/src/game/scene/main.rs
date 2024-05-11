@@ -1,5 +1,8 @@
+extern crate alloc;
+use alloc::boxed::Box;
+
 use crate::ui::Ui;
-use crate::event_loop::EventSender;
+use crate::event_loop::EventDispatcherProxy;
 use crate::game::events::GameEvent;
 use super::{GameScene, connecting::Connecting};
 
@@ -7,7 +10,7 @@ pub struct Main {
     _ui: Ui,
 }
 impl Main {
-    pub fn new(event_sender: EventSender<GameEvent>) -> Self {
+    pub fn new(event_sender: EventDispatcherProxy<GameEvent>) -> Self {
         let ui = Ui::new();
             ui.div().with_class("row heading").text("Yahtzee!");
             ui.div().with_class("row").text("Enter display name you will join lobby as:");

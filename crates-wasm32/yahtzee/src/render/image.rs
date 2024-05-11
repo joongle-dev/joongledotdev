@@ -1,15 +1,9 @@
-use core::slice::SlicePattern;
-use image::EncodableLayout;
-
 pub struct Image {
     image: image::RgbaImage,
 }
 impl Image {
     pub fn new_from_memory(data: &[u8]) -> Self {
-        let image = match image::load_from_memory(data) {
-            Ok(image) => image,
-            Err(error) => image::DynamicImage::new_rgba8(1, 1),
-        };
+        let image = image::load_from_memory(data).unwrap_or_else(|error| image::DynamicImage::new_rgba8(1, 1));
         let image = image.to_rgba8();
         Self {
             image

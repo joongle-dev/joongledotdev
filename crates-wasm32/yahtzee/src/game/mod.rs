@@ -1,10 +1,13 @@
+extern crate alloc;
+use alloc::boxed::Box;
+
 mod events;
 pub use events::GameEvent;
 
 mod scene;
 use scene::{GameScene, main::Main};
 use crate::render::Renderer;
-use crate::event_loop::EventSender;
+use crate::event_loop::EventDispatcherProxy;
 
 pub struct Game {
     scene: Box<dyn GameScene>,
@@ -12,7 +15,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(renderer: Renderer, event_sender: EventSender<GameEvent>) -> Self {
+    pub fn new(renderer: Renderer, event_sender: EventDispatcherProxy<GameEvent>) -> Self {
         Self {
             scene: Box::new(Main::new(event_sender)),
             renderer,

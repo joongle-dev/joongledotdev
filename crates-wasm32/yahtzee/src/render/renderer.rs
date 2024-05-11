@@ -1,8 +1,10 @@
-use wgpu::{RenderPipelineDescriptor, ShaderSource, TextureDescriptor};
-use wgpu::util::DeviceExt;
+extern crate alloc;
+use alloc::vec::Vec;
+
+use wgpu::util::{DeviceExt, TextureDataOrder};
 
 pub struct Renderer {
-    surface: wgpu::Surface,
+    surface: wgpu::Surface<'static>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
@@ -27,9 +29,9 @@ impl Renderer {
             ..Default::default()
         });
 
-        let surface = match instance.create_surface_from_canvas(canvas) {
+        let surface = match instance.create_surface(wgpu::SurfaceTarget::Canvas(canvas)) {
             Ok(surface) => surface,
-            Err(error) => panic!("Failed to create surface from canvas: {error}")
+            Err(_) => panic!("Failed to create surface from canvas.")
         };
 
         let adapter = match instance.request_adapter(
@@ -42,21 +44,16 @@ impl Renderer {
             Some(adapter) => adapter,
             None => panic!("Failed render adapter request.")
         };
-        let adapter_info = adapter.get_info();
-        log::info!("Graphics adapter name: {}", adapter_info.name);
-        log::info!("Graphics adapter driver: {}", adapter_info.driver);
-        log::info!("Graphics adapter driver info: {}", adapter_info.driver_info);
 
         let (device, queue) = match adapter.request_device(
             &wgpu::DeviceDescriptor {
-                features: wgpu::Features::empty(),
-                limits: wgpu::Limits::downlevel_webgl2_defaults(),
                 label: Some("Graphics Device"),
+                ..Default::default()
             },
             None
         ).await {
             Ok(device_queue) => device_queue,
-            Err(error) => panic!("Failed render device request: {error}")
+            Err(error) => panic!("Failed render device request.")
         };
 
         let surface_capabilities = surface.get_capabilities(&adapter);
@@ -71,7 +68,8 @@ impl Renderer {
             height: canvas_height,
             present_mode: surface_capabilities.present_modes[0], //TODO: Present mode setting.
             alpha_mode: surface_capabilities.alpha_modes[0],
-            view_formats: vec![]
+            view_formats: Vec::new(),
+            desired_maximum_frame_latency: 0,
         };
         surface.configure(&device, &config);
 
@@ -82,7 +80,7 @@ impl Renderer {
         let shader_module = device.create_shader_module(
             wgpu::ShaderModuleDescriptor{
                 label: Some("Shader Module"),
-                source: ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+                source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
             }
         );
         let camera_bind_group_layout = device.create_bind_group_layout(
@@ -154,7 +152,7 @@ impl Renderer {
             }
         );
         let pipeline = device.create_render_pipeline(
-            &RenderPipelineDescriptor{
+            &wgpu::RenderPipelineDescriptor{
                 label: Some("Render Pipeline"),
                 layout: Some(&pipeline_layout),
                 vertex: wgpu::VertexState {
@@ -183,6 +181,7 @@ impl Renderer {
                             ],
                         }
                     ],
+                    compilation_options: Default::default(),
                 },
                 primitive: wgpu::PrimitiveState{
                     topology: wgpu::PrimitiveTopology::TriangleList,
@@ -214,6 +213,7 @@ impl Renderer {
                             write_mask: wgpu::ColorWrites::ALL,
                         })
                     ],
+                    compilation_options: Default::default(),
                 }),
                 multiview: None,
             }
@@ -359,7 +359,7 @@ impl Renderer {
     pub fn create_texture(&self, image: super::Image) -> super::Texture {
         let texture = self.device.create_texture_with_data(
             &self.queue,
-            &TextureDescriptor{
+            &wgpu::TextureDescriptor{
                 label: Some("Texture"),
                 size: wgpu::Extent3d{
                     width: image.width(),
@@ -373,6 +373,7 @@ impl Renderer {
                 usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
                 view_formats: &[],
             },
+            TextureDataOrder::LayerMajor,
             image.bytes()
         );
         let view = texture.create_view(
@@ -393,7 +394,9 @@ impl Renderer {
         }
     }
 
-    pub fn create_material()
+    pub fn create_material() -> super::Material {
+        todo!()
+    }
 
     pub fn resize(&mut self, new_width: u32, new_height: u32) {
         if new_width > 0 && new_height > 0 {
@@ -432,7 +435,7 @@ impl Renderer {
             });
         }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        self.queue.submit(core::iter::once(encoder.finish()));
         output.present();
 
         Ok(())

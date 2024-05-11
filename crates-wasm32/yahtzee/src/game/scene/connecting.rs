@@ -1,16 +1,16 @@
 use wasm_bindgen::prelude::*;
 use crate::network::{web_socket::WebSocket};
-use crate::event_loop::EventSender;
+use crate::event_loop::EventDispatcherProxy;
 use crate::game::events::{GameEvent, WebSocketEvent, WebSocketMessage};
 use super::{GameScene, lobby::Lobby};
 
 pub struct Connecting {
-    event_sender: EventSender<GameEvent>,
+    event_sender: EventDispatcherProxy<GameEvent>,
     web_socket: Option<WebSocket<WebSocketMessage>>,
     name: String,
 }
 impl Connecting {
-    pub fn new(event_sender: EventSender<GameEvent>, name: String) -> Self {
+    pub fn new(event_sender: EventDispatcherProxy<GameEvent>, name: String) -> Self {
         let window = web_sys::window().unwrap_throw();
         let location = window.location();
         let protocol = location.protocol().unwrap_throw();

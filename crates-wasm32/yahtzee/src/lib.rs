@@ -1,5 +1,3 @@
-extern crate core;
-
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
@@ -17,7 +15,6 @@ use game::{Game, GameEvent};
 
 mod event_loop;
 use event_loop::{Event, EventLoop};
-use crate::event_loop::PlatformEvent;
 
 #[wasm_bindgen]
 pub async fn run(canvas: HtmlCanvasElement) {
@@ -32,14 +29,9 @@ pub async fn run(canvas: HtmlCanvasElement) {
 
     event_loop.run(canvas, move |event| {
         match event {
-            Event::PlatformEvent(event) => match event {
-                PlatformEvent::AnimationFrame { timestamp } => game.update(timestamp),
-                PlatformEvent::MouseMove { .. } => {}
-                PlatformEvent::MouseDown { .. } => {}
-                PlatformEvent::MouseUp { .. } => {}
-            },
+            Event::FrameUpdate { time } => game.update(time),
             Event::UserEvent(event) => game.handle_event(event),
+            _ => {}
         }
-        true
     });
 }
