@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
             .precompressed_gzip()
             .not_found_service(ServeFile::new("assets/not_found.html")))
         .nest("/yahtzee", yahtzee::routes())
-        .nest("/yahtzee", yahtzee1::routes())
+        .nest("/yahtzee1", yahtzee1::routes())
         .route("/hello", get(hello));
 
     match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
