@@ -1,0 +1,105 @@
+body {
+    background: #222222;
+}
+
+.ui {
+    --aspect: calc(4 / 3);
+    --vw: min(1vw, calc(1vh * var(--aspect)));
+    --vh: min(1vh, calc(1vw / var(--aspect)));
+
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    width: calc(var(--vw) * 100);
+    height: calc(var(--vh) * 100);
+    margin: auto;
+    object-fit: contain;
+
+    font-family: Helvetica, sans-serif;
+    font-size: calc(var(--vh) * 7);
+
+    display: flex;
+    flex-direction: column;
+
+    pointer-events: none;
+}
+
+.row {
+    flex-direction: row;
+    margin: 1vmin;
+}
+
+.centered {
+    text-align: center;
+}
+
+.heading {
+    font-size: calc(var(--vh) * 14);
+}
+
+.anchor {
+    background-color: #FFFFFF11;
+    color: black;
+
+    pointer-events: auto;
+}
+
+.anchor:hover {
+    background-color: #FFFFFF22;
+}
+
+.input {
+    background-color: #FFFFFF11;
+    border: none;
+    outline: none;
+    padding: calc(var(--vw) * 1) calc(var(--vh) * 1);
+    margin: 0;
+    box-sizing: border-box;
+
+    text-align: center;
+    font-size: inherit;
+
+    pointer-events:auto;
+}
+
+.button {
+    background-color: #FFFFFF22;
+    border: none;
+    outline: none;
+    padding: calc(var(--vw) * 1) calc(var(--vh) * 1);
+    margin: 0;
+    box-sizing: border-box;
+
+    text-align: center;
+    font-size: inherit;
+
+    cursor: pointer;
+    pointer-events:auto;
+}
+
+.button:hover {
+    background-color: #FFFFFF33;
+}
+
+#canvas {
+    pointer-events: auto;
+}
+
+.user-display-list {
+    width: calc(var(--vw) * 50);
+    margin: 1vmin;
+
+    flex-direction: column;
+    overflow-y: scroll;
+    pointer-events: auto;
+}
+
+.user-display {
+    background-color: #FFFFFF11;
+    margin-bottom: 1vmin;
+
+    flex-direction: row;
+}

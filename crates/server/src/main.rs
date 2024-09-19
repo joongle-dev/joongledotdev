@@ -1,5 +1,6 @@
 pub mod error;
 pub mod yahtzee;
+mod yahtzee1;
 
 use axum::{
     Router,
@@ -28,6 +29,7 @@ async fn main() -> Result<()> {
             .precompressed_gzip()
             .not_found_service(ServeFile::new("assets/not_found.html")))
         .nest("/yahtzee", yahtzee::routes())
+        .nest("/yahtzee", yahtzee1::routes())
         .route("/hello", get(hello));
 
     match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
