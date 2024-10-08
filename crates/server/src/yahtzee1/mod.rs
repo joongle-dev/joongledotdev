@@ -60,7 +60,7 @@ impl Rooms {
                         // Peer disconnected
                         RoomMessage::Disconnect(peer_id) => {
                             let message_serialized = bincode::serialize(&PeerEvent::PeerDisconnect(peer_id)).unwrap();
-                            slots[peer_id] = None;
+                            slots[peer_id as usize] = None;
                             slots.iter_mut()
                                 .filter_map(|slot| slot.as_mut())
                                 .map(|peer| peer.send(Message::Binary(message_serialized)))
