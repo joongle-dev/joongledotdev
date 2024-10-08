@@ -61,13 +61,14 @@ impl Rooms {
                         RoomMessage::Disconnect(peer_id) => {
                             let message_serialized = bincode::serialize(&PeerEvent::PeerDisconnect(peer_id)).unwrap();
                             slots[peer_id] = None;
-                            slots.iter_mut().filter_map(|slot| slot.as_mut()).map(|peer| {
-                                peer.send(Message::Binary(message_serialized))
-                            }).collect::<FuturesUnordered<_>>().await;
+                            slots.iter_mut()
+                                .filter_map(|slot| slot.as_mut())
+                                .map(|peer| peer.send(Message::Binary(message_serialized)))
+                                .collect::<FuturesUnordered<_>>().await;
                         }
                         // Forward signal
                         RoomMessage::Forward(peer_id, socket_message) => {
-                            if let Some(peer) = slots.get_mut(peer_id) {
+                            if let Some(peer) = slots.get_mut(peer_id as usize) {
                                 peer.send(socket_message).await.unwrap();
                             }
                         }
