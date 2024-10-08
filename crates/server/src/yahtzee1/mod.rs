@@ -45,7 +45,7 @@ impl Rooms {
                                 slots.iter_mut().filter_map(|slot| slot.as_mut()).map(|peer| {
                                     peer.send(Message::Binary(message_serialized.clone()))
                                 }).await;
-                                slots[peer_id] = Some(socket_sender);
+                                slots[peer_id as usize] = Some(socket_sender);
 
                                 // Task: Forward incoming peer request
                                 tokio::spawn(async move {
