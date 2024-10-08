@@ -50,6 +50,7 @@ impl Rooms {
                                 slots[peer_id as usize] = Some(socket_sender);
 
                                 // Task: Forward incoming peer request
+                                let room_sender = room_sender.clone();
                                 tokio::spawn(async move {
                                     while let Some(Ok(Message::Binary(message_serialized))) = socket_receiver.next().await {
                                         if let PeerRequest::Signal(target, data) = bincode::deserialize::<PeerRequest>(&message_serialized).unwrap() {
@@ -65,7 +66,7 @@ impl Rooms {
                             slots[peer_id as usize] = None;
                             slots.iter_mut()
                                 .filter_map(|slot| slot.as_mut())
-                                .map(|peer| peer.send(Message::Binary(message_serialized)))
+                                .map(|peer| peer.send(Message::Binary(message_serialized.clone())))
                                 .collect::<FuturesUnordered<_>>()
                                 .collect::<Vec<_>>()
                                 .await;
