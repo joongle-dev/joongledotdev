@@ -68,7 +68,7 @@ impl Rooms {
                         }
                         // Forward signal
                         RoomMessage::Forward(peer_id, socket_message) => {
-                            if let Some(peer) = slots.get_mut(peer_id as usize) {
+                            if let Some(Some(peer)) = slots.get_mut(peer_id as usize) {
                                 peer.send(socket_message).await.unwrap();
                             }
                         }
