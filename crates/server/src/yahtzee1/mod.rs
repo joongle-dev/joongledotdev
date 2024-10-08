@@ -42,9 +42,11 @@ impl Rooms {
                             if let Some(peer_id) = slots.iter().position(|s| s.is_none()).map(|x| x as PeerID) {
                                 let (socket_sender, mut socket_receiver) = socket.split();
                                 let message_serialized = bincode::serialize(&PeerEvent::PeerConnect(peer_id)).unwrap();
-                                slots.iter_mut().filter_map(|slot| slot.as_mut()).map(|peer| {
-                                    peer.send(Message::Binary(message_serialized.clone()))
-                                }).await;
+                                slots.iter_mut()
+                                    .filter_map(|slot| slot.as_mut())
+                                    .map(|peer| peer.send(Message::Binary(message_serialized.clone())))
+                                    .collect::<FuturesUnordered<_>>()
+                                    .collect::<Vec<_>>();
                                 slots[peer_id as usize] = Some(socket_sender);
 
                                 // Task: Forward incoming peer request
