@@ -5,7 +5,7 @@ use axum::extract::{Query, State};
 use axum::extract::ws::{Message, WebSocket};
 use dashmap::DashMap;
 use futures::stream::{FuturesUnordered, SplitSink};
-use futures::{SinkExt, StreamExt};
+use futures::{FutureExt, SinkExt, StreamExt};
 use serde::Deserialize;
 use tokio::sync::mpsc::UnboundedSender;
 use signaling_protocol::{RoomID, PeerID, PeerRequest, PeerEvent};
@@ -64,7 +64,9 @@ impl Rooms {
                             slots.iter_mut()
                                 .filter_map(|slot| slot.as_mut())
                                 .map(|peer| peer.send(Message::Binary(message_serialized)))
-                                .collect::<FuturesUnordered<_>>().await;
+                                .collect::<FuturesUnordered<_>>()
+                                .collect::<Vec<_>>()
+                                .await;
                         }
                         // Forward signal
                         RoomMessage::Forward(peer_id, socket_message) => {
