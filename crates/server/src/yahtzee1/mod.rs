@@ -44,7 +44,7 @@ impl Rooms {
                                 let message_serialized = bincode::serialize(&PeerEvent::PeerConnect(peer_id)).unwrap();
                                 slots.iter_mut()
                                     .filter_map(|slot| slot.as_mut())
-                                    .map(|peer| peer.send(Message::Binary(message_serialized.into())))
+                                    .map(|peer| peer.send(Message::Binary(message_serialized.clone().into())))
                                     .collect::<FuturesUnordered<_>>()
                                     .collect::<Vec<_>>();
                                 slots[peer_id as usize] = Some(socket_sender);
@@ -66,7 +66,7 @@ impl Rooms {
                             slots[peer_id as usize] = None;
                             slots.iter_mut()
                                 .filter_map(|slot| slot.as_mut())
-                                .map(|peer| peer.send(Message::Binary(message_serialized.into())))
+                                .map(|peer| peer.send(Message::Binary(message_serialized.clone().into())))
                                 .collect::<FuturesUnordered<_>>()
                                 .collect::<Vec<_>>()
                                 .await;
