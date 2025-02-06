@@ -102,7 +102,7 @@ async fn lobby_connection_handler(
 ) -> impl IntoResponse {
     println!("->> New connection at {addr}");
     websocket_upgrade.on_upgrade(move |mut websocket| async move {
-        match websocket.send(Message::Text("pong".to_owned())).await {
+        match websocket.send(Message::Text("pong".into())).await {
             Ok(_) => println!("->> Successfully ponged {addr}"),
             Err(_) => println!("->> Error ponging {addr}")
         }

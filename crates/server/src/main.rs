@@ -2,14 +2,7 @@ pub mod error;
 pub mod yahtzee;
 mod yahtzee1;
 
-use axum::{
-    Router,
-    routing::get,
-    http::{Uri, StatusCode},
-    extract::Host,
-    response::{Html, Redirect, IntoResponse},
-    handler::HandlerWithoutStateExt
-};
+use axum::{Router, routing::get, http::{Uri, StatusCode}, response::{Html, Redirect, IntoResponse}, handler::HandlerWithoutStateExt, http};
 use axum_server::tls_rustls::RustlsConfig;
 use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
@@ -63,11 +56,10 @@ async fn redirect_http_to_https() {
         Ok(Uri::from_parts(parts)?)
     }
 
-    let redirect = move |Host(host): Host, uri: Uri| async move {
-        match make_https(host, uri) {
-            Ok(uri) => Ok(Redirect::permanent(&uri.to_string())),
-            Err(_) => Err(StatusCode::BAD_REQUEST)
-        }
+    let redirect = move |uri: Uri| async move {
+        let mut parts = uri.into_parts();
+        parts.scheme = Some(http::uri::Scheme::HTTPS);
+        Uri::from_parts(parts).map(|uri| Redirect::permanent(&uri.to_string())).map_err(|_| StatusCode::BAD_REQUEST)
     };
 
     let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
