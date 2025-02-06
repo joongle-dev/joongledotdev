@@ -4,6 +4,7 @@ use std::{sync::Arc, collections::BTreeMap};
 use futures::{sink::SinkExt, stream::{StreamExt, SplitSink}};
 use tokio::sync::mpsc::UnboundedSender;
 use axum::extract::ws::{Message, WebSocket};
+use bytes::Bytes;
 
 pub type LobbyID = u64;
 type UserID = u32;
@@ -32,7 +33,7 @@ enum LobbyMessage {
     },
     Message{
         target: UserID,
-        socket_message_serialized: Vec<u8>,
+        socket_message_serialized: Bytes,
     }
 }
 
@@ -88,7 +89,7 @@ impl LobbyCollection {
                             Ok(socket_message_serialized) => socket_message_serialized,
                             Err(_) => break, //Break out of lobby message loop on serialization failure.
                         };
-                        let _ = socket_sender.send(Message::Binary(socket_message_serialized)).await;
+                        let _ = socket_sender.send(Message::Binary(socket_message_serialized.into())).await;
 
                         //Add client to users list.
                         users.insert(user_id, socket_sender);

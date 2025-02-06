@@ -45,24 +45,14 @@ async fn main() -> Result<()> {
 }
 
 async fn redirect_http_to_https() {
-    fn make_https(host: String, uri: Uri) -> core::result::Result<Uri, axum::BoxError> {
-        let mut parts = uri.into_parts();
-        parts.scheme = Some(axum::http::uri::Scheme::HTTPS);
-        if parts.path_and_query.is_none() {
-            parts.path_and_query = Some("/".parse().unwrap());
-        }
-        let https_host = host.replace(&HTTP_PORT.to_string(), &HTTPS_PORT.to_string());
-        parts.authority = Some(https_host.parse()?);
-        Ok(Uri::from_parts(parts)?)
-    }
-
+    let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
     let redirect = move |uri: Uri| async move {
         let mut parts = uri.into_parts();
         parts.scheme = Some(http::uri::Scheme::HTTPS);
-        Uri::from_parts(parts).map(|uri| Redirect::permanent(&uri.to_string())).map_err(|_| StatusCode::BAD_REQUEST)
+        Uri::from_parts(parts)
+            .map(|uri| Redirect::permanent(&uri.to_string()))
+            .map_err(|_| StatusCode::BAD_REQUEST)
     };
-
-    let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
     let _ = axum_server::bind(addr).serve(redirect.into_make_service()).await;
 }
 

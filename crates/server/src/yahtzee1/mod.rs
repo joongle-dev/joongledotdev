@@ -44,7 +44,7 @@ impl Rooms {
                                 let message_serialized = bincode::serialize(&PeerEvent::PeerConnect(peer_id)).unwrap();
                                 slots.iter_mut()
                                     .filter_map(|slot| slot.as_mut())
-                                    .map(|peer| peer.send(Message::Binary(message_serialized.clone())))
+                                    .map(|peer| peer.send(Message::Binary(message_serialized.into())))
                                     .collect::<FuturesUnordered<_>>()
                                     .collect::<Vec<_>>();
                                 slots[peer_id as usize] = Some(socket_sender);
@@ -54,7 +54,7 @@ impl Rooms {
                                 tokio::spawn(async move {
                                     while let Some(Ok(Message::Binary(message_serialized))) = socket_receiver.next().await {
                                         if let PeerRequest::Signal(target, data) = bincode::deserialize::<PeerRequest>(&message_serialized).unwrap() {
-                                            room_sender.send(RoomMessage::Forward(target, Message::Binary(bincode::serialize(&PeerEvent::Signal(peer_id, data)).unwrap()))).unwrap();
+                                            room_sender.send(RoomMessage::Forward(target, Message::Binary(bincode::serialize(&PeerEvent::Signal(peer_id, data)).unwrap().into()))).unwrap();
                                         }
                                     }
                                 });
@@ -66,7 +66,7 @@ impl Rooms {
                             slots[peer_id as usize] = None;
                             slots.iter_mut()
                                 .filter_map(|slot| slot.as_mut())
-                                .map(|peer| peer.send(Message::Binary(message_serialized.clone())))
+                                .map(|peer| peer.send(Message::Binary(message_serialized.into())))
                                 .collect::<FuturesUnordered<_>>()
                                 .collect::<Vec<_>>()
                                 .await;
