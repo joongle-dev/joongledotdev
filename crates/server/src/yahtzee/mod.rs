@@ -22,7 +22,7 @@ pub fn routes() -> Router {
 struct LobbyQuery {
     lobby_id: Option<u64>,
 }
-async fn lobby_connection_handler(
+async fn lobby_connection_handler( 
     websocket_upgrade: WebSocketUpgrade,
     State(lobby_collection): State<LobbyCollection>,
     Query(lobby_query): Query<LobbyQuery>,

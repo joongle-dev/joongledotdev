@@ -24,7 +24,7 @@ impl Renderer {
         let canvas_width = canvas.width();
         let canvas_height = canvas.height();
 
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             ..Default::default()
         });
@@ -157,7 +157,7 @@ impl Renderer {
                 layout: Some(&pipeline_layout),
                 vertex: wgpu::VertexState {
                     module: &shader_module,
-                    entry_point: "vs_main",
+                    entry_point: Some("vs_main"),
                     buffers: &[
                         wgpu::VertexBufferLayout{
                             array_stride: 32,
@@ -202,7 +202,7 @@ impl Renderer {
                 multisample: Default::default(),
                 fragment: Some(wgpu::FragmentState{
                     module: &shader_module,
-                    entry_point: "fs_main",
+                    entry_point: Some("fs_main"),
                     targets: &[
                         Some(wgpu::ColorTargetState{
                             format: surface_format,
@@ -216,6 +216,7 @@ impl Renderer {
                     compilation_options: Default::default(),
                 }),
                 multiview: None,
+                cache: None,
             }
         );
 
@@ -292,6 +293,7 @@ impl Renderer {
                 label: Some("Depth Texture View"),
                 format: Some(wgpu::TextureFormat::Depth24Plus),
                 dimension: Some(wgpu::TextureViewDimension::D2),
+                usage: None,
                 aspect: wgpu::TextureAspect::DepthOnly,
                 base_mip_level: 0,
                 mip_level_count: None,
@@ -381,6 +383,7 @@ impl Renderer {
                 label: Some("Texture View"),
                 format: None,
                 dimension: None,
+                usage: None,
                 aspect: Default::default(),
                 base_mip_level: 0,
                 mip_level_count: None,
