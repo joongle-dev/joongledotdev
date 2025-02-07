@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
     match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
         Ok(config) => {
             println!("->> Found certificates!, Running in encrypted mode.");
-            tokio::spawn(redirect_http_to_https());
+            // tokio::spawn(redirect_http_to_https());
             let addr = SocketAddr::from((IP_ADDR, HTTPS_PORT));
             println!("->> Listening on {addr}.");
             let _ = axum_server::bind_rustls(addr, config).serve(routes.into_make_service_with_connect_info::<SocketAddr>()).await;
@@ -44,17 +44,17 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn redirect_http_to_https() {
-    let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
-    let redirect = move |uri: Uri| async move {
-        let mut parts = uri.into_parts();
-        parts.scheme = Some(http::uri::Scheme::HTTPS);
-        Uri::from_parts(parts)
-            .map(|uri| Redirect::permanent(&uri.to_string()))
-            .map_err(|_| StatusCode::BAD_REQUEST)
-    };
-    let _ = axum_server::bind(addr).serve(redirect.into_make_service()).await;
-}
+// async fn redirect_http_to_https() {
+//     let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
+//     let redirect = move |uri: Uri| async move {
+//         let mut parts = uri.into_parts();
+//         parts.scheme = Some(http::uri::Scheme::HTTPS);
+//         Uri::from_parts(parts)
+//             .map(|uri| Redirect::permanent(&uri.to_string()))
+//             .map_err(|_| StatusCode::BAD_REQUEST)
+//     };
+//     let _ = axum_server::bind(addr).serve(redirect.into_make_service()).await;
+// }
 
 async fn hello() -> impl IntoResponse {
     Html("Hello")
