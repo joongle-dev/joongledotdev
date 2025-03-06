@@ -6,7 +6,7 @@ let socket;
 if (room_id) {
     join_button.disabled = false;
     join_button.addEventListener('click', () => {
-        socket = new WebSocket('wss://joongle.dev/yahtzee1/ws?' + room_id);
+        socket = new WebSocket('wss://joongle.dev/yahtzee1/ws?room=' + room_id);
         socket.binaryType = 'arraybuffer';
         socket.onopen = () => {
             socket.onmessage = (event) => {}
