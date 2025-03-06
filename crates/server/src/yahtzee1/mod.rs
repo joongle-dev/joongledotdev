@@ -101,7 +101,7 @@ async fn lobby_connection_handler(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     println!("->> New connection at {addr}");
-    if query.room.is_some() {
+    if query.room.is_none() {
         let _ = websocket_upgrade.on_upgrade(move |mut websocket| async move {
             match websocket.send(Message::Text("pong".into())).await {
                 Ok(_) => println!("->> Successfully ponged {addr}"),
