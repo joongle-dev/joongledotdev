@@ -5,7 +5,7 @@ const room_id = search_params.get('room');
 if (room_id) {
     join_button.disabled = false;
     join_button.addEventListener('click', () => {
-        const socket = new WebSocket('wss://www.joongle.dev/yahtzee1/ws?room=' + room_id);
+        const socket = new WebSocket('wss://' + window.location.host + window.location.pathname + 'ws?' + room_id);
         socket.binaryType = 'arraybuffer';
         socket.onopen = () => {
             console.log('open event');
@@ -25,7 +25,7 @@ if (room_id) {
     });
 }
 create_button.addEventListener('click', () => {
-    const socket = new WebSocket('wss://www.joongle.dev/yahtzee1/ws');
+    const socket = new WebSocket('wss://' + window.location.host + window.location.pathname + 'ws');
     socket.binaryType = 'arraybuffer';
     socket.onopen = () => {
         console.log('open event');
