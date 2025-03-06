@@ -9,7 +9,9 @@ if (room_id) {
         socket = new WebSocket('wss://joongle.dev/yahtzee1/ws?room=' + room_id);
         socket.binaryType = 'arraybuffer';
         socket.onopen = () => {
-            socket.onmessage = (event) => {}
+            socket.onmessage = (event) => {
+                console.log('message event: ' + event.data)
+            }
             console.log('open event');
         }
         socket.onclose = (event) => {
@@ -23,6 +25,9 @@ if (room_id) {
                 default:
             }
             console.log("close event")
+        }
+        socket.onerror = (event) => {
+            console.log('error event: ' + event);
         }
     });
 }
