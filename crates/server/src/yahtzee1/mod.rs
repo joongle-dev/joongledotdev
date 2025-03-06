@@ -11,7 +11,7 @@ pub fn routes() -> Router {
 
 #[derive(Deserialize)]
 struct RoomQuery {
-    room: Option<u64>,
+    room: Option<String>,
 }
 async fn lobby_connection_handler(
     websocket_upgrade: WebSocketUpgrade,
