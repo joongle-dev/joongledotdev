@@ -2,7 +2,7 @@ const join_button = document.getElementById('join-button');
 const create_button = document.getElementById('create-button');
 const search_params = new URLSearchParams(window.location.search);
 const room_id = search_params.get('room');
-const socket = new WebSocket('wss://joongle.dev/yahtzee1/ws');
+const socket = new WebSocket('wss://joongle.dev/yahtzee/ws');
 socket.binaryType = 'arraybuffer';
 socket.onopen = () => {
     console.log('open event');
