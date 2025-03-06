@@ -2,7 +2,7 @@ pub mod error;
 pub mod yahtzee;
 mod yahtzee1;
 
-use axum::{Router, routing::get, http::{Uri, StatusCode}, response::{Html, Redirect, IntoResponse}, handler::HandlerWithoutStateExt, http};
+use axum::{Router, response::IntoResponse, handler::HandlerWithoutStateExt};
 use axum_server::tls_rustls::RustlsConfig;
 use std::net::SocketAddr;
 use tower_http::services::{ServeDir, ServeFile};
@@ -22,8 +22,7 @@ async fn main() -> Result<()> {
             .precompressed_gzip()
             .not_found_service(ServeFile::new("assets/not_found.html")))
         .nest("/yahtzee", yahtzee::routes())
-        .nest("/yahtzee1", yahtzee1::routes())
-        .route("/hello", get(hello));
+        .nest("/yahtzee1", yahtzee1::routes());
 
     match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
         Ok(config) => {
@@ -42,20 +41,4 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-// async fn redirect_http_to_https() {
-//     let addr = SocketAddr::from((IP_ADDR, HTTP_PORT));
-//     let redirect = move |uri: Uri| async move {
-//         let mut parts = uri.into_parts();
-//         parts.scheme = Some(http::uri::Scheme::HTTPS);
-//         Uri::from_parts(parts)
-//             .map(|uri| Redirect::permanent(&uri.to_string()))
-//             .map_err(|_| StatusCode::BAD_REQUEST)
-//     };
-//     let _ = axum_server::bind(addr).serve(redirect.into_make_service()).await;
-// }
-
-async fn hello() -> impl IntoResponse {
-    Html("Hello")
 }

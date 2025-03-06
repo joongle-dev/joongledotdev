@@ -18,7 +18,6 @@ async fn lobby_connection_handler(
     Query(query): Query<RoomQuery>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
-    /*
     if query.room.is_none() {
         let _ = websocket_upgrade.on_upgrade(move |mut websocket| async move {
             match websocket.send(Message::Text("pong".into())).await {
@@ -27,11 +26,4 @@ async fn lobby_connection_handler(
             }
         });
     }
-    */
-    let _ = websocket_upgrade.on_upgrade(move |mut websocket| async move {
-        match websocket.send(Message::Text("pong".into())).await {
-            Ok(_) => println!("->> Successfully ponged {addr}"),
-            Err(_) => println!("->> Error ponging {addr}")
-        }
-    });
 }
