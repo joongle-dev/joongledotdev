@@ -2,10 +2,11 @@ const join_button = document.getElementById('join-button');
 const create_button = document.getElementById('create-button');
 const search_params = new URLSearchParams(window.location.search);
 const room_id = search_params.get('room');
+let socket;
 if (room_id) {
     join_button.disabled = false;
     join_button.addEventListener('click', () => {
-        const socket = new WebSocket('wss://joongle.dev/yahtzee1/ws?room=' + room_id);
+        socket = new WebSocket('wss://joongle.dev/yahtzee1/ws?room=' + room_id);
         socket.binaryType = 'arraybuffer';
         socket.onopen = () => {
             socket.onmessage = (event) => {
@@ -22,7 +23,7 @@ if (room_id) {
     });
 }
 create_button.addEventListener('click', () => {
-    const socket = new WebSocket('wss://joongle.dev/yahtzee1/ws');
+    socket = new WebSocket('wss://joongle.dev/yahtzee1/ws');
     socket.binaryType = 'arraybuffer';
     socket.onopen = () => {
         socket.onmessage = (event) => {
