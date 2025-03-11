@@ -19,9 +19,9 @@ socket.onerror = (event) => {
 if (room_id) {
     join_button.disabled = false;
     join_button.addEventListener('click', () => {
-        socket.send('{"type":"ClientEvent","room":"abc","name":"def"}');
+        socket.send('{"type":"Join","room":"abc","name":"def"}');
     });
 }
 create_button.addEventListener('click', () => {
-    socket.send('{"type":"ClientEvent","name":"def"}');
+    socket.send('{"type":"Join","name":"def"}');
 });
