@@ -3,8 +3,8 @@ services:
   web: 
     image: joongle/joongledotdev
     volumes:
-      - /etc/letsencrypt/live/www.joongle.dev/cert.pem:/certs/cert.pem:ro
-      - /etc/letsencrypt/live/www.joongle.dev/privkey.pem:/certs/key.pem:ro
+      - /etc/letsencrypt/live/joongle.dev/cert.pem:/certs/cert.pem:ro
+      - /etc/letsencrypt/live/joongle.dev/privkey.pem:/certs/key.pem:ro
       - ./www:/assets:ro
     build:
       context: .
