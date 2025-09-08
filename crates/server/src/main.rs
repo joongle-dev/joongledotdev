@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
         .nest("/yahtzee", yahtzee::routes())
         .nest("/yahtzee1", yahtzee1::routes());
     let http_routes = Router::new()
-        .nest_service("/.well-known/acme-challenge", ServeDir::new("/.well-known/acme-challenge"));
+        .nest_service("/.well-known/acme-challenge", ServeDir::new(".well-known/acme-challenge"));
     match RustlsConfig::from_pem_file(CERT_FILE, KEY_FILE).await {
         Ok(config) => {
             println!("->> Found certificates!, Running in encrypted mode.");
