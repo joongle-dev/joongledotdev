@@ -57,7 +57,10 @@ jobs:
 
           - name: Configure SSH
             run: |
+              mkdir -p -m 700 ~/.ssh/
+              install -m 600 /dev/null ~/.ssh/id_ed25519
               echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+              install -m 640 /dev/null ~/.ssh/known_hosts
               echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
           - name: Copy docker-compose.yml to droplet
