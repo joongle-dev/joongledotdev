@@ -64,7 +64,7 @@ jobs:
               echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
           - name: Copy docker-compose.yml to droplet
-            run: scp -o StrictHostKeyChecking=no docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ vars.SERVER_HOSTNAME }}:~
+            run: scp docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ vars.SERVER_HOSTNAME }}:~
 
           - name: Deploy
             run: ssh ${{ secrets.SSH_USERNAME }}@${{ vars.SERVER_HOSTNAME }} "docker compose down && docker compose pull && docker compose up -d"
