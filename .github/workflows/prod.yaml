@@ -54,21 +54,14 @@ jobs:
             with:
                 username: ${{ secrets.DOCKER_USERNAME }}
                 password: ${{ secrets.DOCKER_PASSWORD }}
-      
-          - name: Install sshpass
-            run: sudo apt-get install sshpass
+
+          - name: Configure SSH
+            run: |
+              echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+              echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
           - name: Copy docker-compose.yml to droplet
-            run: sshpass -v -p ${{ secrets.DROPLET_PASSWORD }} scp -o StrictHostKeyChecking=no docker-compose.yaml root@${{ vars.DROPLET_IP }}:~
-    
+            run: scp -o StrictHostKeyChecking=no docker-compose.yaml ${{ secrets.SSH_USERNAME }}@${{ vars.SERVER_HOSTNAME }}:~
+
           - name: Deploy
-            uses: appleboy/ssh-action@master
-            with:
-                host: ${{ vars.DROPLET_IP }}
-                username: root
-                password: ${{ secrets.DROPLET_PASSWORD }}
-                script: |
-                    cd ~
-                    docker compose down
-                    docker compose pull
-                    docker compose up -d
+            run: ssh ${{ secrets.SSH_USERNAME }}@${{ vars.SERVER_HOSTNAME }} "docker compose down && docker compose pull && docker compose up -d"
